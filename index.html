@@ -3,7 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <title>Thermen-Terminplaner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       font-family: sans-serif;
       padding: 20px;
@@ -13,20 +18,26 @@
 
     h1 {
       margin-bottom: 10px;
+      text-align: center;
     }
 
     .controls {
       margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .controls > * {
+      flex: 1 1 150px;
+      min-width: 120px;
     }
 
     .calendar {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
       gap: 8px;
-    }
-
-    .week {
-      display: contents;
     }
 
     .day {
@@ -36,6 +47,7 @@
       text-align: center;
       cursor: pointer;
       transition: background-color 0.3s ease, border 0.3s ease;
+      font-size: 0.9rem;
       min-height: 50px;
     }
 
@@ -58,9 +70,20 @@
       background-color: #f0f0f0;
     }
 
-    input, select, button {
-      margin-right: 10px;
-      padding: 6px 8px;
+    @media (max-width: 600px) {
+      .day {
+        padding: 6px;
+        font-size: 0.75rem;
+      }
+
+      .controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .controls > * {
+        flex: 1 1 auto;
+      }
     }
   </style>
 </head>
@@ -73,19 +96,17 @@
     <select id="participant"></select>
 
     <input type="text" id="newName" placeholder="Neuer Name" />
-    <button id="addBtn">Hinzufügen</button>
+    <button onclick="addParticipant()">Hinzufügen</button>
 
-    <button id="saveBtn">💾 Speichern</button>
+    <button onclick="saveSelections()">💾 Speichern</button>
   </div>
 
   <div id="calendar" class="calendar"></div>
 
   <script type="module">
-    // Firebase SDK Imports
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
     import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
 
-    // Firebase Konfiguration
     const firebaseConfig = {
       apiKey: "AIzaSyBNw4eFo3Bq48tH7TMcR3mrkSmZ0klpljQ",
       authDomain: "thermen-planer.firebaseapp.com",
@@ -97,19 +118,16 @@
       measurementId: "G-PC37HL4JB3"
     };
 
-    // Initialisierung
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // --- App-Logik ---
     const calendarDiv = document.getElementById("calendar");
     const participantSelect = document.getElementById("participant");
     const newNameInput = document.getElementById("newName");
-    const addBtn = document.getElementById("addBtn");
-    const saveBtn = document.getElementById("saveBtn");
 
     const startDate = new Date("2025-04-28");
     const endDate = new Date("2025-06-06");
+
     const holidays = ["2025-05-01", "2025-05-29"];
     const weekdays = ["Mo", "Di", "Mi", "Do", "Fr"];
 
@@ -190,6 +208,7 @@
 
     function updateParticipantSelect(selectName = null) {
       participantSelect.innerHTML = "";
+
       Object.keys(state.participants).forEach(name => {
         const option = document.createElement("option");
         option.value = name;
@@ -206,6 +225,11 @@
 
       refreshUI();
     }
+
+    participantSelect.addEventListener("change", () => {
+      state.selectedPerson = participantSelect.value;
+      refreshUI();
+    });
 
     function toggleSelection(date) {
       const person = state.selectedPerson;
@@ -250,12 +274,8 @@
 
       const dates = Array.from(state.participants[person]);
       set(ref(db, "participants/" + person), dates)
-        .then(() => {
-          alert("Auswahl gespeichert für: " + person);
-        })
-        .catch(err => {
-          console.error("Fehler beim Speichern:", err);
-        });
+        .then(() => alert("Auswahl gespeichert für: " + person))
+        .catch(err => console.error("Fehler beim Speichern:", err));
     }
 
     function getIntensityColor(count) {
@@ -268,21 +288,11 @@
       return colors[Math.floor(Math.random() * colors.length)];
     }
 
-    // Event-Listener
-    addBtn.addEventListener("click", addParticipant);
-    saveBtn.addEventListener("click", saveSelections);
-    participantSelect.addEventListener("change", () => {
-      state.selectedPerson = participantSelect.value;
-      refreshUI();
-    });
-
-    // Initialisierung & Daten aus DB laden
     generateCalendar();
 
-    onValue(ref(db, "participants"), (snapshot) => {
+    onValue(ref(db, "participants"), snapshot => {
       const data = snapshot.val() || {};
       state.participants = {};
-
       Object.keys(data).forEach(name => {
         state.participants[name] = new Set(data[name]);
         if (!state.colors[name]) {
