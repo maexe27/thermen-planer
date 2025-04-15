@@ -2,94 +2,131 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Thermen-Planer</title>
-  <link rel="stylesheet" href="styles.css" />
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
       background: #f0f4f8;
       color: #333;
-      margin: 0;
-      padding: 2rem;
     }
-    h1 {
+
+    header {
+      background: #4c9aff;
+      color: white;
+      padding: 1rem;
       text-align: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    .container {
+      padding: 1rem;
+      max-width: 900px;
+      margin: auto;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
       margin-bottom: 1rem;
     }
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      background: white;
-      border-radius: 8px;
-      padding: 2rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+
+    .controls > * {
+      display: flex;
+      gap: 0.5rem;
     }
+
     select, button {
       padding: 0.5rem;
-      margin: 0.5rem 0.25rem;
       font-size: 1rem;
     }
-    #calendar {
+
+    button {
+      background: #4c9aff;
+      border: none;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #357edd;
+    }
+
+    .calendar {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
       gap: 0.5rem;
-      margin-top: 1rem;
     }
-    .day-box {
+
+    .day {
+      background: white;
       border: 2px solid #ccc;
-      border-radius: 6px;
-      padding: 0.5rem;
+      border-radius: 8px;
       text-align: center;
+      padding: 0.5rem;
       cursor: pointer;
       transition: all 0.2s;
     }
-    .day-box.selected {
-      border-color: #007bff;
-      background-color: #e0f0ff;
+
+    .day:hover {
+      border-color: #4c9aff;
+    }
+
+    .selected {
+      border: 3px solid #4c9aff;
+      background: #e6f2ff;
+    }
+
+    .weekday {
       font-weight: bold;
     }
-    .buttons {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-top: 1rem;
-    }
+
     @media (max-width: 600px) {
-      #calendar {
+      .calendar {
         grid-template-columns: repeat(5, 1fr);
       }
     }
   </style>
 </head>
 <body>
+  <header>Thermen-Planer</header>
   <div class="container">
-    <h1>Thermen-Planer</h1>
-    <label for="participantSelect">Teilnehmer:</label>
-    <select id="participantSelect"></select>
-
-    <div class="buttons">
-      <button id="addBtn">Hinzufügen</button>
-      <button id="renameBtn">Umbenennen</button>
-      <button id="deleteBtn">Löschen</button>
-      <button id="saveBtn">Auswahl speichern</button>
+    <div class="controls">
+      <div>
+        <label for="participantSelect">Teilnehmer:</label>
+        <select id="participantSelect"></select>
+      </div>
+      <div>
+        <button id="addBtn">Hinzufügen</button>
+        <button id="renameBtn">Umbenennen</button>
+        <button id="deleteBtn">Löschen</button>
+      </div>
+      <div>
+        <button id="saveBtn">Auswahl speichern</button>
+      </div>
     </div>
-
-    <div id="calendar"></div>
+    <div class="calendar" id="calendar"></div>
   </div>
 
+  <!-- Firebase via CDN -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
 
     const firebaseConfig = {
-      apiKey: "DEIN_API_KEY",
+      apiKey: "AIzaSyBNw4eFo3Bq48tH7TMcR3mrkSmZ0klpljQ",
       authDomain: "thermen-planer.firebaseapp.com",
-      databaseURL: "https://thermen-planer-default-rtdb.firebaseio.com/",
+      databaseURL: "https://thermen-planer-default-rtdb.firebaseio.com",
       projectId: "thermen-planer",
-      storageBucket: "thermen-planer.appspot.com",
-      messagingSenderId: "DEINE_SENDER_ID",
-      appId: "DEINE_APP_ID"
+      storageBucket: "thermen-planer.firebasestorage.app",
+      messagingSenderId: "924234640899",
+      appId: "1:924234640899:web:87c4274ff2e6defb45e836",
+      measurementId: "G-PC37HL4JB3"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -97,96 +134,103 @@
 
     const participantSelect = document.getElementById("participantSelect");
     const calendar = document.getElementById("calendar");
-    let selectedDays = [];
-    let currentUser = "";
 
-    function renderCalendar() {
-      const start = new Date();
+    const days = [];
+    const today = new Date();
+
+    for (let i = 0; i < 15; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      days.push({
+        date: date.toISOString().split('T')[0],
+        label: `${["So.", "Mo.", "Di.", "Mi.", "Do.", "Fr.", "Sa."][date.getDay()]}\n${date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}`
+      });
+    }
+
+    function renderCalendar(selectedDays = []) {
       calendar.innerHTML = "";
-      for (let i = 0; i < 20; i++) {
-        const date = new Date();
-        date.setDate(start.getDate() + i);
-        const dayName = date.toLocaleDateString("de-DE", { weekday: "short" });
-        const dayDate = date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
-
+      days.forEach(d => {
         const div = document.createElement("div");
-        div.className = "day-box";
-        div.dataset.date = dayDate;
-        div.innerHTML = `<div>${dayName}</div><div>${dayDate}</div>`;
-        div.addEventListener("click", () => {
+        div.className = "day";
+        if (selectedDays.includes(d.date)) div.classList.add("selected");
+        const [weekday, date] = d.label.split('\n');
+        div.innerHTML = `<div class="weekday">${weekday}</div><div>${date}</div>`;
+        div.onclick = () => {
           div.classList.toggle("selected");
-          const idx = selectedDays.indexOf(dayDate);
-          if (idx > -1) selectedDays.splice(idx, 1);
-          else selectedDays.push(dayDate);
-        });
+        };
         calendar.appendChild(div);
-      }
+      });
     }
 
-    function loadParticipants() {
-      onValue(ref(db, "participants"), (snapshot) => {
+    function updateParticipantList(participants) {
+      participantSelect.innerHTML = "";
+      Object.keys(participants).forEach(name => {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        participantSelect.appendChild(option);
+      });
+    }
+
+    function loadData() {
+      const participantsRef = ref(db, "participants");
+      onValue(participantsRef, (snapshot) => {
         const data = snapshot.val() || {};
-        participantSelect.innerHTML = "";
-        Object.keys(data).forEach(name => {
-          const opt = document.createElement("option");
-          opt.value = name;
-          opt.textContent = name;
-          participantSelect.appendChild(opt);
-        });
-        currentUser = participantSelect.value;
-        loadSelections();
+        updateParticipantList(data);
+        const selected = participantSelect.value;
+        renderCalendar(data[selected] || []);
       });
     }
 
-    function loadSelections() {
-      const user = participantSelect.value;
-      currentUser = user;
-      selectedDays = [];
-      onValue(ref(db, `participants/${user}`), (snapshot) => {
-        const days = snapshot.val() || [];
-        selectedDays = days;
-        document.querySelectorAll(".day-box").forEach(box => {
-          box.classList.toggle("selected", selectedDays.includes(box.dataset.date));
-        });
-      });
+    function getSelectedDays() {
+      return [...calendar.children].filter(d => d.classList.contains("selected")).map((_, i) => days[i].date);
     }
 
-    document.getElementById("addBtn").addEventListener("click", () => {
-      const name = prompt("Neuer Teilnehmername:");
-      if (name) set(ref(db, `participants/${name}`), []);
-    });
+    document.getElementById("addBtn").onclick = () => {
+      const name = prompt("Neuen Teilnehmernamen eingeben:");
+      if (name) {
+        set(ref(db, `participants/${name}`), []);
+        participantSelect.value = name;
+      }
+    };
 
-    document.getElementById("renameBtn").addEventListener("click", () => {
+    document.getElementById("renameBtn").onclick = () => {
       const oldName = participantSelect.value;
-      const newName = prompt("Neuer Name:", oldName);
+      const newName = prompt("Neuen Namen eingeben:", oldName);
       if (newName && newName !== oldName) {
-        onValue(ref(db, `participants/${oldName}`), (snapshot) => {
+        const oldRef = ref(db, `participants/${oldName}`);
+        const newRef = ref(db, `participants/${newName}`);
+        onValue(oldRef, (snapshot) => {
           const data = snapshot.val();
-          set(ref(db, `participants/${newName}`), data);
-          set(ref(db, `participants/${oldName}`), null);
+          set(newRef, data || []);
+          set(oldRef, null);
+          participantSelect.value = newName;
         }, { onlyOnce: true });
       }
-    });
+    };
 
-    document.getElementById("deleteBtn").addEventListener("click", () => {
+    document.getElementById("deleteBtn").onclick = () => {
       const name = participantSelect.value;
-      if (confirm(`Teilnehmer '${name}' löschen?`)) {
+      if (confirm(`${name} wirklich löschen?`)) {
         set(ref(db, `participants/${name}`), null);
       }
-    });
+    };
 
-    document.getElementById("saveBtn").addEventListener("click", () => {
-      if (currentUser) {
-        set(ref(db, `participants/${currentUser}`), selectedDays);
-      }
-    });
+    document.getElementById("saveBtn").onclick = () => {
+      const name = participantSelect.value;
+      const days = getSelectedDays();
+      set(ref(db, `participants/${name}`), days);
+    };
 
-    participantSelect.addEventListener("change", () => {
-      loadSelections();
-    });
+    participantSelect.onchange = () => {
+      const name = participantSelect.value;
+      const participantsRef = ref(db, `participants/${name}`);
+      onValue(participantsRef, (snapshot) => {
+        renderCalendar(snapshot.val() || []);
+      }, { onlyOnce: true });
+    };
 
-    renderCalendar();
-    loadParticipants();
+    loadData();
   </script>
 </body>
 </html>
