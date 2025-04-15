@@ -213,15 +213,20 @@
     }
 
     function renameParticipant() {
-      const oldName = state.selectedPerson;
-      const newName = renameInput.value.trim();
-      if (!oldName || !newName || oldName === newName || state.participants[newName]) return;
+  const oldName = state.selectedPerson;
+  const newName = renameInput.value.trim();
+  if (!oldName || !newName || oldName === newName || state.participants[newName]) return;
 
-      const dates = Array.from(state.participants[oldName]);
-      set(ref(db, "participants/" + newName), dates)
-        .then(() => remove(ref(db, "participants/" + oldName)))
-        .catch(console.error);
-    }
+  const dates = Array.from(state.participants[oldName]);
+  set(ref(db, "participants/" + newName), dates)
+    .then(() => {
+      remove(ref(db, "participants/" + oldName));
+      renameInput.value = "";
+      updateParticipantSelect(newName); // 👈 WICHTIG: neuer Name bleibt selektiert
+    })
+    .catch(console.error);
+}
+
 
     function deleteParticipant() {
       const person = state.selectedPerson;
@@ -320,7 +325,7 @@
         }
       });
 
-      updateParticipantSelect();
+      updateParticipantSelect(newName);
       refreshUI();
     });
 
