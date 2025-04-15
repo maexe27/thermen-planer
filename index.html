@@ -14,52 +14,37 @@
       padding: 20px;
       max-width: 960px;
       margin: auto;
-      background-color: #f9f9f9;
       font-size: 1rem;
     }
 
     h1 {
+      margin-bottom: 20px;
       text-align: center;
-      margin-bottom: 1rem;
     }
 
     .controls {
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
-      margin-bottom: 1.5rem;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .controls label,
+    .controls select,
+    .controls input,
+    .controls button {
+      font-size: 1rem;
     }
 
     .row {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.5rem;
-      align-items: center;
+      gap: 10px;
     }
 
-    label {
-      font-weight: bold;
-      margin-right: 0.5rem;
-    }
-
-    select,
-    input,
-    button {
-      padding: 8px;
-      font-size: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
-
-    button {
-      background-color: #007bff;
-      color: white;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-    }
-
-    button:hover {
-      background-color: #0056b3;
+    .row > * {
+      flex: 1 1 auto;
+      min-width: 120px;
     }
 
     .calendar {
@@ -69,31 +54,38 @@
     }
 
     .day {
-      background-color: #fff;
-      border: 1px solid #ccc;
-      border-radius: 6px;
+      border: 2px solid #ccc;
       padding: 10px;
+      border-radius: 6px;
       text-align: center;
       cursor: pointer;
+      transition: background-color 0.3s ease, border 0.3s ease;
       font-size: 0.9rem;
-      transition: background-color 0.2s ease, border 0.2s ease;
       min-height: 50px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 4px;
     }
 
     .day.empty {
       background-color: #eee;
-      color: #888;
       cursor: default;
+      color: #888;
       font-style: italic;
     }
 
     .day.selected {
-      border: 3px solid #333;
-      background-color: #e0e0e0;
+      border: 3px solid #007BFF;
+      background-color: #D0E8FF;
     }
 
     .day.full-match {
-      border: 2px solid red !important;
+      border-color: #FF5733 !important;
+    }
+
+    .day:hover:not(.empty) {
+      background-color: #f0f0f0;
     }
 
     @media (max-width: 600px) {
@@ -102,16 +94,12 @@
         font-size: 0.75rem;
       }
 
-      .calendar {
+      .controls .row {
+        flex-direction: column;
         gap: 6px;
       }
 
-      .row {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      select, input, button {
+      .row > * {
         width: 100%;
       }
     }
@@ -126,13 +114,13 @@
       <select id="participant"></select>
     </div>
     <div class="row">
-      <input type="text" id="newName" placeholder="Neuer Name / Umbenennen" />
-      <button id="addBtn">➕ Hinzufügen</button>
-      <button id="renameBtn">✏️ Umbenennen</button>
-      <button id="deleteBtn">🗑️ Löschen</button>
+      <input type="text" id="newName" placeholder="Neuer Name" />
+      <button id="addBtn">Hinzufügen</button>
+      <button id="renameBtn">Umbenennen</button>
+      <button id="deleteBtn">Löschen</button>
     </div>
     <div class="row">
-      <button id="saveBtn" style="flex: 1">💾 Auswahl speichern</button>
+      <button id="saveBtn">💾 Auswahl speichern</button>
     </div>
   </div>
 
@@ -140,7 +128,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-    import { getDatabase, ref, set, remove, update, onValue } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+    import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBNw4eFo3Bq48tH7TMcR3mrkSmZ0klpljQ",
@@ -159,17 +147,20 @@
     const calendarDiv = document.getElementById("calendar");
     const participantSelect = document.getElementById("participant");
     const newNameInput = document.getElementById("newName");
+    const addBtn = document.getElementById("addBtn");
+    const renameBtn = document.getElementById("renameBtn");
+    const deleteBtn = document.getElementById("deleteBtn");
+    const saveBtn = document.getElementById("saveBtn");
 
     const startDate = new Date("2025-04-28");
     const endDate = new Date("2025-06-06");
+
     const holidays = ["2025-05-01", "2025-05-29"];
 
     const state = {
       participants: {},
-      selectedPerson: null
+      selectedPerson: null,
     };
-
-    const weekdays = ["Mo", "Di", "Mi", "Do", "Fr"];
 
     function formatDate(date) {
       return date.toISOString().split("T")[0];
@@ -177,10 +168,6 @@
 
     function getWeekdayNumber(jsDay) {
       return jsDay === 0 ? 6 : jsDay - 1;
-    }
-
-    function getWeekdayLabel(date) {
-      return date.toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
     }
 
     function generateCalendar() {
@@ -191,13 +178,15 @@
         const dayCells = new Array(5).fill(null);
 
         for (let i = 0; i < 7 && current <= endDate; i++) {
-          const jsWeekday = getWeekdayNumber(current.getDay());
+          const weekday = getWeekdayNumber(current.getDay());
           const isoDate = formatDate(current);
 
-          if (jsWeekday >= 0 && jsWeekday <= 4) {
+          if (weekday >= 0 && weekday <= 4) {
             const dayDiv = document.createElement("div");
             dayDiv.className = "day";
-            dayDiv.textContent = getWeekdayLabel(current);
+            const dayLabel = current.toLocaleDateString("de-DE", { weekday: "short" });
+            const dateLabel = current.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+            dayDiv.innerHTML = `<div>${dayLabel}</div><div>${dateLabel}</div>`;
             dayDiv.dataset.date = isoDate;
 
             if (holidays.includes(isoDate)) {
@@ -207,63 +196,55 @@
               dayDiv.onclick = () => toggleSelection(isoDate);
             }
 
-            dayCells[jsWeekday] = dayDiv;
+            dayCells[weekday] = dayDiv;
           }
 
           current.setDate(current.getDate() + 1);
         }
 
         dayCells.forEach(cell => {
-          if (cell) {
-            calendarDiv.appendChild(cell);
-          } else {
-            const empty = document.createElement("div");
-            empty.className = "day empty";
-            empty.textContent = "-";
-            calendarDiv.appendChild(empty);
-          }
+          calendarDiv.appendChild(cell || Object.assign(document.createElement("div"), {
+            className: "day empty",
+            textContent: "-"
+          }));
         });
       }
 
       refreshUI();
     }
 
-    function refreshUI() {
-      const allDates = [...document.querySelectorAll(".day")].filter(d => !d.classList.contains("empty"));
-
-      allDates.forEach(div => {
-        const date = div.dataset.date;
-        let count = 0;
-        let isOwn = false;
-
-        for (const [name, dates] of Object.entries(state.participants)) {
-          if (dates.has(date)) {
-            count++;
-            if (name === state.selectedPerson) isOwn = true;
-          }
-        }
-
-        div.classList.toggle("selected", isOwn);
-        div.classList.toggle("full-match", count === Object.keys(state.participants).length && count > 0);
-        div.style.backgroundColor = getColorByCount(count);
-      });
-    }
-
     function toggleSelection(date) {
       const person = state.selectedPerson;
       if (!person) return;
+      const selections = state.participants[person];
 
-      const dates = state.participants[person];
-      if (dates.has(date)) {
-        dates.delete(date);
-      } else {
-        dates.add(date);
-      }
+      if (selections.has(date)) selections.delete(date);
+      else selections.add(date);
 
       refreshUI();
     }
 
-    function getColorByCount(count) {
+    function refreshUI() {
+      document.querySelectorAll(".day").forEach(div => {
+        if (div.classList.contains("empty")) return;
+        const date = div.dataset.date;
+        let count = 0;
+        let ownSelection = false;
+
+        for (const [name, dates] of Object.entries(state.participants)) {
+          if (dates.has(date)) {
+            count++;
+            if (name === state.selectedPerson) ownSelection = true;
+          }
+        }
+
+        div.classList.toggle("selected", ownSelection);
+        div.classList.toggle("full-match", count === Object.keys(state.participants).length && count > 0);
+        div.style.backgroundColor = getIntensityColor(count);
+      });
+    }
+
+    function getIntensityColor(count) {
       const colors = ["#fff", "#d2f8d2", "#a6f0a6", "#6ce66c", "#33cc33"];
       return colors[count] || "#28a428";
     }
@@ -276,56 +257,41 @@
         option.textContent = name;
         participantSelect.appendChild(option);
       });
-
-      if (selectName && state.participants[selectName]) {
-        participantSelect.value = selectName;
-        state.selectedPerson = selectName;
-      } else {
-        state.selectedPerson = participantSelect.value;
-      }
-
+      if (selectName) participantSelect.value = selectName;
+      state.selectedPerson = participantSelect.value;
       refreshUI();
     }
 
-    // Event Listeners
-    document.getElementById("addBtn").onclick = () => {
+    addBtn.onclick = () => {
       const name = newNameInput.value.trim();
       if (!name || state.participants[name]) return;
-
       state.participants[name] = new Set();
       updateParticipantSelect(name);
       newNameInput.value = "";
     };
 
-    document.getElementById("renameBtn").onclick = () => {
-      const current = state.selectedPerson;
+    renameBtn.onclick = () => {
+      const oldName = state.selectedPerson;
       const newName = newNameInput.value.trim();
-      if (!newName || !state.participants[current] || current === newName) return;
-
-      const dates = [...state.participants[current]];
-      delete state.participants[current];
-      state.participants[newName] = new Set(dates);
-
-      remove(ref(db, "participants/" + current));
-      set(ref(db, "participants/" + newName), dates);
-
+      if (!oldName || !newName || oldName === newName || state.participants[newName]) return;
+      state.participants[newName] = state.participants[oldName];
+      delete state.participants[oldName];
+      remove(ref(db, "participants/" + oldName));
+      set(ref(db, "participants/" + newName), Array.from(state.participants[newName]));
       updateParticipantSelect(newName);
-      newNameInput.value = "";
     };
 
-    document.getElementById("deleteBtn").onclick = () => {
-      const current = state.selectedPerson;
-      if (!current) return;
-
-      delete state.participants[current];
-      remove(ref(db, "participants/" + current));
+    deleteBtn.onclick = () => {
+      const person = state.selectedPerson;
+      if (!person) return;
+      delete state.participants[person];
+      remove(ref(db, "participants/" + person));
       updateParticipantSelect();
     };
 
-    document.getElementById("saveBtn").onclick = () => {
+    saveBtn.onclick = () => {
       const person = state.selectedPerson;
       if (!person) return;
-
       const dates = Array.from(state.participants[person]);
       set(ref(db, "participants/" + person), dates)
         .then(() => alert("Auswahl gespeichert für: " + person))
@@ -337,7 +303,8 @@
       refreshUI();
     });
 
-    // Firebase Daten laden
+    generateCalendar();
+
     onValue(ref(db, "participants"), snapshot => {
       const data = snapshot.val() || {};
       state.participants = {};
@@ -346,8 +313,6 @@
       });
       updateParticipantSelect();
     });
-
-    generateCalendar();
   </script>
 </body>
 </html>
