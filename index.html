@@ -157,11 +157,20 @@
     }
 
     addBtn.addEventListener('click', () => {
-      const name = prompt('Neuer Teilnehmername:');
-      if (name && !selections[name]) {
-        set(ref(db, `participants/${name}`), []);
-      }
+  const name = prompt('Neuer Teilnehmername:');
+  console.log('Eingegeben:', name, selections);
+  if (name && !selections[name]) {
+    console.log('Setze Teilnehmer:', name);
+    set(ref(db, `participants/${name}`), []).then(() => {
+      console.log('Erfolgreich gespeichert');
+    }).catch(error => {
+      console.error('Fehler beim Speichern:', error);
     });
+  } else {
+    console.log('Name leer oder schon vorhanden');
+  }
+});
+
 
     renameBtn.addEventListener('click', () => {
       const oldName = participantSelect.value;
