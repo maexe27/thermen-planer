@@ -41,6 +41,7 @@
       cursor: pointer;
       transition: background-color 0.3s ease, border 0.3s ease;
       min-height: 50px;
+      font-size: 1rem;
     }
   
     .day.empty {
@@ -67,9 +68,14 @@
     }
   
     @media (max-width: 600px) {
+      .calendar {
+        gap: 4px;
+      }
+  
       .day {
-        padding: 4px;
+        padding: 8px 4px;
         font-size: 0.75rem;
+        min-height: 70px;
       }
   
       .controls {
@@ -84,6 +90,7 @@
       }
     }
   </style>
+  
   
 </head>
 <body>
