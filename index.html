@@ -71,35 +71,31 @@
   <div id="calendar" class="calendar"></div>
 
   <script type="module">
-    // Firebase SDKs importieren
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-analytics.js";
     import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
-
+  
     const firebaseConfig = {
       apiKey: "AIzaSyBNw4eFo3Bq48tH7TMcR3mrkSmZ0klpljQ",
       authDomain: "thermen-planer.firebaseapp.com",
       databaseURL: "https://thermen-planer-default-rtdb.firebaseio.com",
       projectId: "thermen-planer",
-      storageBucket: "thermen-planer.appspot.com",
+      storageBucket: "thermen-planer.firebasestorage.app",
       messagingSenderId: "924234640899",
       appId: "1:924234640899:web:87c4274ff2e6defb45e836",
       measurementId: "G-PC37HL4JB3"
     };
-
+  
     const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
     const db = getDatabase(app);
-
-    // Damit der Zugriff im normalen <script> möglich ist:
-    window.firebaseDB = {
-      db,
-      ref,
-      set,
-      onValue
-    };
+  
+    // Exporte für Zugriff im globalen Scope
+    window.db = db;
+    window.ref = ref;
+    window.set = set;
+    window.onValue = onValue;
   </script>
-
+  
+  
   <script>
     const calendarDiv = document.getElementById("calendar");
     const participantSelect = document.getElementById("participant");
@@ -250,18 +246,20 @@
     }
 
     function saveSelections() {
-      const person = state.selectedPerson;
-      if (!person) return;
+  const person = state.selectedPerson;
+  if (!person) return;
 
-      const dates = Array.from(state.participants[person]);
-      firebaseDB.set(firebaseDB.ref(firebaseDB.db, "participants/" + person), dates)
-        .then(() => {
-          alert("Auswahl gespeichert für: " + person);
-        })
-        .catch(err => {
-          console.error("Fehler beim Speichern:", err);
-        });
-    }
+  const dates = Array.from(state.participants[person]);
+  const dbRef = ref(db, "participants/" + person);
+  set(dbRef, dates)
+    .then(() => {
+      alert("Auswahl gespeichert für: " + person);
+    })
+    .catch(err => {
+      console.error("Fehler beim Speichern:", err);
+    });
+}
+
 
     function getIntensityColor(count) {
       const colors = ["#fff", "#d2f8d2", "#a6f0a6", "#6ce66c", "#33cc33"];
@@ -276,21 +274,20 @@
     generateCalendar();
 
     // Daten aus Firebase laden
-    window.addEventListener("load", () => {
-      firebaseDB.onValue(firebaseDB.ref(firebaseDB.db, "participants"), (snapshot) => {
-        const data = snapshot.val() || {};
-        state.participants = {};
-        Object.keys(data).forEach(name => {
-          state.participants[name] = new Set(data[name]);
-          if (!state.colors[name]) {
-            state.colors[name] = randomColor();
-          }
-        });
+    onValue(ref(db, "participants"), (snapshot) => {
+  const data = snapshot.val() || {};
+  state.participants = {};
+  Object.keys(data).forEach(name => {
+    state.participants[name] = new Set(data[name]);
+    if (!state.colors[name]) {
+      state.colors[name] = randomColor();
+    }
+  });
 
-        updateParticipantSelect();
-        refreshUI();
-      });
-    });
+  updateParticipantSelect();
+  refreshUI();
+});
+
   </script>
 
 </body>
