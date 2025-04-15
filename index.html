@@ -71,7 +71,43 @@
       background-color: #f0f0f0;
     }
 
+    .control-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+  justify-content: center;
+}
+
+.control-row > * {
+  flex: 1 1 150px;
+  min-width: 120px;
+}
+
+@media (max-width: 600px) {
+  .control-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+
+  .control-row > * {
+    width: 100%;
+  }
+}
+
+
     @media (max-width: 600px) {
+
+        .control-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+
+  .control-row > * {
+    width: 100%;
+  }
       .day {
         padding: 4px;
         font-size: 0.75rem;
@@ -95,19 +131,24 @@
   <h1>Thermen-Terminplaner 🧖‍♀️</h1>
 
   <div class="controls">
-    <label for="participant">Teilnehmer:</label>
-    <select id="participant"></select>
-
-    <input type="text" id="newName" placeholder="Neuer Name" />
-    <button onclick="addParticipant()">Hinzufügen</button>
-
-    <input type="text" id="renameInput" placeholder="Neuer Name für Umbenennen" />
-    <button onclick="renameParticipant()">Umbenennen</button>
-
-    <button onclick="deleteParticipant()">🗑️ Löschen</button>
-
-    <button onclick="saveSelections()">💾 Speichern</button>
+    <div class="control-row">
+      <label for="participant">Teilnehmer:</label>
+      <select id="participant"></select>
+    </div>
+  
+    <div class="control-row">
+      <input type="text" id="newName" placeholder="Neuer Name" />
+      <button onclick="addParticipant()">Hinzufügen</button>
+      <input type="text" id="renameInput" placeholder="Umbenennen in…" />
+      <button onclick="renameParticipant()">Umbenennen</button>
+      <button onclick="removeParticipant()">Löschen</button>
+    </div>
+  
+    <div class="control-row">
+      <button onclick="saveSelections()">💾 Speichern</button>
+    </div>
   </div>
+  
 
   <div id="calendar" class="calendar"></div>
 
