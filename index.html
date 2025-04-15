@@ -79,21 +79,25 @@
   <div class="calendar" id="calendar"></div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-    import { getDatabase, ref, set, get, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-    const firebaseConfig = {
-      apiKey: "DEIN_API_KEY",
-      authDomain: "thermen-planer.firebaseapp.com",
-      databaseURL: "https://thermen-planer-default-rtdb.firebaseio.com/",
-      projectId: "thermen-planer",
-      storageBucket: "thermen-planer.appspot.com",
-      messagingSenderId: "DEINE_SENDER_ID",
-      appId: "DEINE_APP_ID"
-    };
+const firebaseConfig = {
+  apiKey: "DEIN_API_KEY",
+  authDomain: "thermen-planer.firebaseapp.com",
+  databaseURL: "https://thermen-planer-default-rtdb.firebaseio.com/", // <- wichtig!
+  projectId: "thermen-planer",
+  storageBucket: "thermen-planer.appspot.com",
+  messagingSenderId: "DEINE_SENDER_ID",
+  appId: "DEINE_APP_ID"
+};
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app, "https://thermen-planer-default-rtdb.firebaseio.com/");
+// App initialisieren
+const app = initializeApp(firebaseConfig);
+
+// Datenbank korrekt abrufen (ohne URL hier!)
+const db = getDatabase(app);
+
 
     const calendar = document.getElementById("calendar");
     const participantSelect = document.getElementById("participantSelect");
