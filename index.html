@@ -163,6 +163,13 @@
       await remove(ref(db, `selections/${name}`));
       location.reload();
     };
+
+    // Exportiere Funktionen für HTML-Button-Callbacks
+window.addParticipant = addParticipant;
+window.saveSelections = saveSelections;
+window.renameParticipant = renameParticipant;
+window.deleteParticipant = deleteParticipant;
+
   </script>
 
 </body>
