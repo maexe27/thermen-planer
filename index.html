@@ -160,6 +160,14 @@
   const name = prompt('Neuer Teilnehmername:');
   if (name && !selections[name]) {
     console.log("🟡 Teilnehmer wird hinzugefügt:", name);
+    console.log("Neuer Teilnehmer wird geschrieben nach:", `participants/${name}`);
+console.log("ref:", ref(db, `participants/${name}`));
+set(ref(db, `participants/${name}`), []).then(() => {
+  console.log("✅ Erfolgreich gespeichert");
+}).catch((error) => {
+  console.error("❌ Fehler beim Speichern:", error);
+});
+
     set(ref(db, `participants/${name}`), [])
       .then(() => {
         console.log("✅ Teilnehmer erfolgreich hinzugefügt");
