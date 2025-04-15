@@ -1,132 +1,104 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Thermen-Terminplaner</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    :root {
-      --primary: #4CAF50;
-      --bg: #f9f9f9;
-      --card-bg: white;
-      --radius: 12px;
-      --shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-
     body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
       padding: 20px;
-      font-family: 'Segoe UI', sans-serif;
-      background: var(--bg);
+      background: #f9f9f9;
+      color: #333;
       max-width: 960px;
-      margin-inline: auto;
+      margin: auto;
     }
 
     h1 {
       text-align: center;
-      color: var(--primary);
+      margin-bottom: 20px;
     }
 
-    .card {
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 20px;
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
       margin-bottom: 20px;
+    }
+
+    .controls label {
+      font-weight: bold;
     }
 
     .controls-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 12px;
+      gap: 10px;
+      align-items: center;
     }
 
-    .controls-row > * {
-      flex: 1;
-      min-width: 140px;
-    }
-
-    select, input, button {
-      padding: 10px;
-      border-radius: var(--radius);
-      border: 1px solid #ccc;
+    select, button {
+      padding: 8px;
       font-size: 1rem;
     }
 
-    button {
-      background: var(--primary);
-      color: white;
-      border: none;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    button:hover {
-      background: #388e3c;
-    }
-
-    .calendar {
+    #calendar {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
       gap: 10px;
     }
 
     .day {
-      text-align: center;
-      border: 2px solid #eee;
-      border-radius: var(--radius);
-      padding: 10px;
       background: white;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      text-align: center;
+      padding: 10px;
       cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .day span {
-      display: block;
+      transition: all 0.3s ease;
     }
 
     .day.selected {
-      border: 2px solid #333;
-      background-color: #e3f2e3;
+      border: 2px solid #007bff;
+      background: #e6f0ff;
     }
 
     .day.full-match {
-      border-color: red;
+      border: 2px solid #28a745;
+      background-color: #d4edda;
     }
 
     .day.empty {
-      background: #eee;
-      color: #999;
+      background-color: #f0f0f0;
+      color: #888;
       cursor: default;
     }
 
-    @media (max-width: 600px) {
-      .calendar {
-        grid-template-columns: repeat(5, 1fr);
-      }
+    .day:hover:not(.empty) {
+      background-color: #f5faff;
+    }
 
-      .controls-row {
-        flex-direction: column;
+    @media (max-width: 600px) {
+      #calendar {
+        grid-template-columns: repeat(2, 1fr);
       }
     }
   </style>
 </head>
 <body>
-
   <h1>Thermen-Terminplaner 🧖‍♀️</h1>
 
-  <div class="card">
+  <div class="controls">
     <div class="controls-row">
       <label for="participant">Teilnehmer:</label>
       <select id="participant"></select>
     </div>
 
     <div class="controls-row">
-      <input type="text" id="newName" placeholder="Neuer Name" />
       <button id="addBtn">➕ Hinzufügen</button>
-      <button id="renameBtn">✏️ Umbenennen</button>
-      <button id="deleteBtn">❌ Löschen</button>
+      <button id="renameBtn">📝 Umbenennen</button>
+      <button id="deleteBtn">🗑️ Löschen</button>
     </div>
 
     <div class="controls-row">
@@ -134,149 +106,141 @@
     </div>
   </div>
 
-  <div id="calendar" class="calendar card"></div>
+  <div id="calendar"></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-    import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
 
-    const app = initializeApp({
+    const firebaseConfig = {
       apiKey: "AIzaSyBNw4eFo3Bq48tH7TMcR3mrkSmZ0klpljQ",
       authDomain: "thermen-planer.firebaseapp.com",
       databaseURL: "https://thermen-planer-default-rtdb.firebaseio.com",
       projectId: "thermen-planer",
       storageBucket: "thermen-planer.appspot.com",
       messagingSenderId: "924234640899",
-      appId: "1:924234640899:web:87c4274ff2e6defb45e836",
-      measurementId: "G-PC37HL4JB3"
-    });
+      appId: "1:924234640899:web:87c4274ff2e6defb45e836"
+    };
 
+    const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    const calendarDiv = document.getElementById("calendar");
+
     const participantSelect = document.getElementById("participant");
-    const newNameInput = document.getElementById("newName");
+    const calendarDiv = document.getElementById("calendar");
 
     const startDate = new Date("2025-04-28");
     const endDate = new Date("2025-06-06");
     const holidays = ["2025-05-01", "2025-05-29"];
-    const weekdays = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
 
     const state = {
       participants: {},
-      selectedPerson: null
+      colors: {},
+      selectedPerson: null,
     };
 
-    const formatDate = d => d.toISOString().split("T")[0];
+    function formatDate(date) {
+      return date.toISOString().split("T")[0];
+    }
+
+    function getWeekdayNumber(jsDay) {
+      return jsDay === 0 ? 6 : jsDay - 1;
+    }
+
+    function getWeekdayLabel(date) {
+      return date.toLocaleDateString("de-DE", { weekday: "short" });
+    }
+
+    function getDateLabel(date) {
+      return date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+    }
 
     function generateCalendar() {
       calendarDiv.innerHTML = "";
-      let date = new Date(startDate);
-      while (date <= endDate) {
-        if (date.getDay() >= 1 && date.getDay() <= 5) {
-          const div = document.createElement("div");
-          const iso = formatDate(date);
-          const label = date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
-          const wd = weekdays[date.getDay()];
+      let current = new Date(startDate);
 
-          div.className = "day";
-          div.dataset.date = iso;
-          div.innerHTML = `<span>${wd}</span><span>${label}</span>`;
+      while (current <= endDate) {
+        const dayCells = new Array(5).fill(null);
 
-          if (holidays.includes(iso)) {
-            div.classList.add("empty");
-            div.title = "Feiertag";
-          } else {
-            div.addEventListener("click", () => toggleSelection(iso));
+        for (let i = 0; i < 7 && current <= endDate; i++) {
+          const jsWeekday = getWeekdayNumber(current.getDay());
+          const isoDate = formatDate(current);
+
+          if (jsWeekday < 5) {
+            const dayDiv = document.createElement("div");
+            dayDiv.className = "day";
+            dayDiv.dataset.date = isoDate;
+            dayDiv.innerHTML = `<strong>${getWeekdayLabel(current)}</strong><br>${getDateLabel(current)}`;
+
+            if (holidays.includes(isoDate)) {
+              dayDiv.classList.add("empty");
+              dayDiv.title = "Feiertag";
+            } else {
+              dayDiv.onclick = () => toggleSelection(isoDate);
+            }
+
+            dayCells[jsWeekday] = dayDiv;
           }
 
-          calendarDiv.appendChild(div);
+          current.setDate(current.getDate() + 1);
         }
-        date.setDate(date.getDate() + 1);
+
+        dayCells.forEach(cell => {
+          calendarDiv.appendChild(cell || Object.assign(document.createElement("div"), {
+            className: "day empty",
+            innerHTML: "-"
+          }));
+        });
       }
 
       refreshUI();
     }
 
-    function updateSelect(focusName = null) {
-      participantSelect.innerHTML = "";
-      Object.keys(state.participants).forEach(name => {
-        const opt = document.createElement("option");
-        opt.value = name;
-        opt.textContent = name;
-        participantSelect.appendChild(opt);
-      });
-      state.selectedPerson = focusName || participantSelect.value;
-      refreshUI();
-    }
-
     function refreshUI() {
-      document.querySelectorAll(".day").forEach(div => {
-        const date = div.dataset.date;
-        const all = Object.values(state.participants).filter(set => set.has(date));
-        const own = state.participants[state.selectedPerson]?.has(date);
-        div.classList.toggle("selected", own);
-        div.classList.toggle("full-match", all.length === Object.keys(state.participants).length && all.length > 0);
-        div.style.backgroundColor = getColor(all.length);
-      });
-    }
+      const allDates = [...document.querySelectorAll(".day")].filter(d => !d.classList.contains("empty"));
 
-    function getColor(count) {
-      const scale = ["#fff", "#e6f7ec", "#b3ebc8", "#79df9e", "#4CAF50"];
-      return scale[count] || "#2e7d32";
+      allDates.forEach(div => {
+        const date = div.dataset.date;
+        let count = 0;
+        let ownSelection = false;
+
+        for (const [name, dates] of Object.entries(state.participants)) {
+          if (dates.has(date)) {
+            count++;
+            if (name === state.selectedPerson) ownSelection = true;
+          }
+        }
+
+        div.classList.toggle("selected", ownSelection);
+        div.classList.toggle("full-match", count === Object.keys(state.participants).length && count > 0);
+      });
     }
 
     function toggleSelection(date) {
-      const name = state.selectedPerson;
-      if (!name) return;
-      const set = state.participants[name];
-      if (set.has(date)) set.delete(date);
-      else set.add(date);
+      const person = state.selectedPerson;
+      if (!person) return;
+      const selections = state.participants[person];
+      selections.has(date) ? selections.delete(date) : selections.add(date);
       refreshUI();
     }
 
-    function addParticipant() {
-      const name = newNameInput.value.trim();
-      if (!name || state.participants[name]) return;
-      state.participants[name] = new Set();
-      updateSelect(name);
-      newNameInput.value = "";
-    }
+    function updateParticipantSelect(selectName = null) {
+      participantSelect.innerHTML = "";
 
-    function renameParticipant() {
-  const oldName = participantSelect.value;
-  const newName = prompt("Neuer Name für " + oldName + ":");
-  if (!newName || newName === oldName || state.participants[newName]) return;
+      Object.keys(state.participants).forEach(name => {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        participantSelect.appendChild(option);
+      });
 
-  const dates = state.participants[oldName];
-  delete state.participants[oldName];
-  state.participants[newName] = dates;
+      if (selectName) {
+        participantSelect.value = selectName;
+        state.selectedPerson = selectName;
+      } else if (Object.keys(state.participants).length > 0) {
+        state.selectedPerson = participantSelect.value;
+      }
 
-  // Optional: Farbe mitnehmen
-  state.colors[newName] = state.colors[oldName] || randomColor();
-  delete state.colors[oldName];
-
-  set(ref(db, "participants/" + newName), Array.from(dates));
-  set(ref(db, "participants/" + oldName), null);
-
-  updateParticipantSelect(newName); // wichtig: damit der neue direkt ausgewählt ist
-}
-
-
-    function deleteParticipant() {
-      const name = state.selectedPerson;
-      if (!name) return;
-      delete state.participants[name];
-      remove(ref(db, "participants/" + name));
-      updateSelect();
-    }
-
-    function saveSelections() {
-      const name = state.selectedPerson;
-      if (!name) return;
-      const data = Array.from(state.participants[name]);
-      set(ref(db, "participants/" + name), data)
-        .then(() => alert("Auswahl gespeichert für: " + name))
-        .catch(console.error);
+      refreshUI();
     }
 
     participantSelect.addEventListener("change", () => {
@@ -284,21 +248,71 @@
       refreshUI();
     });
 
-    document.getElementById("addBtn").addEventListener("click", addParticipant);
-    document.getElementById("renameBtn").addEventListener("click", renameParticipant);
-    document.getElementById("deleteBtn").addEventListener("click", deleteParticipant);
-    document.getElementById("saveBtn").addEventListener("click", saveSelections);
+    document.getElementById("addBtn").addEventListener("click", () => {
+      const name = prompt("Name des neuen Teilnehmers:");
+      if (!name || state.participants[name]) return;
+
+      state.participants[name] = new Set();
+      state.colors[name] = randomColor();
+
+      updateParticipantSelect(name);
+    });
+
+    document.getElementById("renameBtn").addEventListener("click", () => {
+      const oldName = participantSelect.value;
+      const newName = prompt("Neuer Name für " + oldName + ":");
+      if (!newName || newName === oldName || state.participants[newName]) return;
+
+      const dates = state.participants[oldName];
+      delete state.participants[oldName];
+      state.participants[newName] = dates;
+      state.colors[newName] = state.colors[oldName] || randomColor();
+      delete state.colors[oldName];
+
+      set(ref(db, "participants/" + newName), Array.from(dates));
+      set(ref(db, "participants/" + oldName), null);
+
+      updateParticipantSelect(newName);
+    });
+
+    document.getElementById("deleteBtn").addEventListener("click", () => {
+      const name = participantSelect.value;
+      if (!name || !confirm("Teilnehmer wirklich löschen?")) return;
+
+      delete state.participants[name];
+      delete state.colors[name];
+
+      set(ref(db, "participants/" + name), null);
+      updateParticipantSelect();
+    });
+
+    document.getElementById("saveBtn").addEventListener("click", () => {
+      const person = state.selectedPerson;
+      if (!person) return;
+
+      const dates = Array.from(state.participants[person]);
+      set(ref(db, "participants/" + person), dates)
+        .then(() => alert("Auswahl gespeichert."))
+        .catch(err => console.error("Fehler beim Speichern:", err));
+    });
+
+    function randomColor() {
+      const colors = ["#FFB6C1", "#87CEFA", "#90EE90", "#FFD700", "#FFA07A", "#DA70D6"];
+      return colors[Math.floor(Math.random() * colors.length)];
+    }
+
+    generateCalendar();
 
     onValue(ref(db, "participants"), snapshot => {
       const data = snapshot.val() || {};
       state.participants = {};
       Object.keys(data).forEach(name => {
         state.participants[name] = new Set(data[name]);
+        if (!state.colors[name]) state.colors[name] = randomColor();
       });
-      updateSelect();
-    });
 
-    generateCalendar();
+      updateParticipantSelect();
+    });
   </script>
 </body>
 </html>
