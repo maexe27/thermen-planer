@@ -3,41 +3,34 @@
 <head>
   <meta charset="UTF-8" />
   <title>Thermen-Terminplaner</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
     body {
       font-family: sans-serif;
       padding: 20px;
       max-width: 960px;
       margin: auto;
+      font-size: 1rem;
     }
 
     h1 {
       margin-bottom: 10px;
-      text-align: center;
     }
 
     .controls {
       margin-bottom: 20px;
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-    }
-
-    .controls > * {
-      flex: 1 1 150px;
-      min-width: 120px;
+      gap: 8px;
     }
 
     .calendar {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
       gap: 8px;
+    }
+
+    .week {
+      display: contents;
     }
 
     .day {
@@ -47,7 +40,6 @@
       text-align: center;
       cursor: pointer;
       transition: background-color 0.3s ease, border 0.3s ease;
-      font-size: 0.9rem;
       min-height: 50px;
     }
 
@@ -70,246 +62,269 @@
       background-color: #f0f0f0;
     }
 
+    input, select, button {
+      padding: 6px 8px;
+    }
+
     @media (max-width: 600px) {
       .day {
         padding: 4px;
-        font-size: 0.75rem;
+        font-size: 0.85rem;
+        min-height: 40px;
       }
 
       .controls {
         flex-direction: column;
         align-items: stretch;
-        gap: 6px;
       }
 
       .controls > * {
-        flex: 1 1 auto;
         width: 100%;
       }
     }
-    body {
-  font-size: 1rem;
-}
-
   </style>
 </head>
 <body>
 
-  <h1>Thermen-Terminplaner 🧖‍♀️</h1>
+<h1>Thermen-Terminplaner 🧖‍♀️</h1>
 
-  <div class="controls">
-    <label for="participant">Teilnehmer:</label>
-    <select id="participant"></select>
+<div class="controls">
+  <label for="participant">Teilnehmer:</label>
+  <select id="participant"></select>
 
-    <input type="text" id="newName" placeholder="Neuer Name" />
-    <button onclick="addParticipant()">Hinzufügen</button>
+  <input type="text" id="newName" placeholder="Neuer Name" />
+  <button onclick="addParticipant()">➕ Hinzufügen</button>
+  <button onclick="renameParticipant()">✏️ Umbenennen</button>
+  <button onclick="deleteParticipant()">🗑️ Löschen</button>
+  <button onclick="saveSelections()">💾 Speichern</button>
+</div>
 
-    <button onclick="saveSelections()">💾 Speichern</button>
-  </div>
+<div id="calendar" class="calendar"></div>
 
-  <div id="calendar" class="calendar"></div>
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+  import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+  const firebaseConfig = {
+    apiKey: "AIzaSyBNw4eFo3Bq48tH7TMcR3mrkSmZ0klpljQ",
+    authDomain: "thermen-planer.firebaseapp.com",
+    databaseURL: "https://thermen-planer-default-rtdb.firebaseio.com",
+    projectId: "thermen-planer",
+    storageBucket: "thermen-planer.appspot.com",
+    messagingSenderId: "924234640899",
+    appId: "1:924234640899:web:87c4274ff2e6defb45e836",
+    measurementId: "G-PC37HL4JB3"
+  };
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBNw4eFo3Bq48tH7TMcR3mrkSmZ0klpljQ",
-      authDomain: "thermen-planer.firebaseapp.com",
-      databaseURL: "https://thermen-planer-default-rtdb.firebaseio.com",
-      projectId: "thermen-planer",
-      storageBucket: "thermen-planer.appspot.com",
-      messagingSenderId: "924234640899",
-      appId: "1:924234640899:web:87c4274ff2e6defb45e836",
-      measurementId: "G-PC37HL4JB3"
-    };
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+  // DOM-Elemente
+  const calendarDiv = document.getElementById("calendar");
+  const participantSelect = document.getElementById("participant");
+  const newNameInput = document.getElementById("newName");
 
-    const calendarDiv = document.getElementById("calendar");
-    const participantSelect = document.getElementById("participant");
-    const newNameInput = document.getElementById("newName");
+  const startDate = new Date("2025-04-28");
+  const endDate = new Date("2025-06-06");
+  const holidays = ["2025-05-01", "2025-05-29"];
+  const weekdays = ["Mo", "Di", "Mi", "Do", "Fr"];
 
-    const startDate = new Date("2025-04-28");
-    const endDate = new Date("2025-06-06");
+  const state = {
+    participants: {},
+    colors: {},
+    selectedPerson: null,
+  };
 
-    const holidays = ["2025-05-01", "2025-05-29"];
-    const weekdays = ["Mo", "Di", "Mi", "Do", "Fr"];
+  function formatDate(date) {
+    return date.toISOString().split("T")[0];
+  }
 
-    const state = {
-      participants: {},
-      colors: {},
-      selectedPerson: null,
-    };
+  function getWeekdayNumber(jsDay) {
+    return jsDay === 0 ? 6 : jsDay - 1;
+  }
 
-    function formatDate(date) {
-      return date.toISOString().split("T")[0];
-    }
+  function getWeekdayLabel(date) {
+    return date.toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
+  }
 
-    function getWeekdayNumber(jsDay) {
-      return jsDay === 0 ? 6 : jsDay - 1;
-    }
+  function generateCalendar() {
+    calendarDiv.innerHTML = "";
+    let current = new Date(startDate);
 
-    function getWeekdayLabel(date) {
-      return date.toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
-    }
+    while (current <= endDate) {
+      const weekRow = document.createElement("div");
+      weekRow.className = "week";
+      const dayCells = new Array(5).fill(null);
 
-    function generateCalendar() {
-      calendarDiv.innerHTML = "";
-      let current = new Date(startDate);
+      for (let i = 0; i < 7 && current <= endDate; i++) {
+        const weekday = current.getDay();
+        const jsWeekday = getWeekdayNumber(weekday);
+        const isoDate = formatDate(current);
 
-      while (current <= endDate) {
-        const dayCells = new Array(5).fill(null);
+        if (jsWeekday >= 0 && jsWeekday <= 4) {
+          const isHoliday = holidays.includes(isoDate);
+          const dayDiv = document.createElement("div");
+          dayDiv.className = "day";
+          dayDiv.textContent = getWeekdayLabel(current);
+          dayDiv.dataset.date = isoDate;
 
-        for (let i = 0; i < 7 && current <= endDate; i++) {
-          const weekday = current.getDay();
-          const jsWeekday = getWeekdayNumber(weekday);
-          const isoDate = formatDate(current);
-
-          if (jsWeekday >= 0 && jsWeekday <= 4) {
-            const isHoliday = holidays.includes(isoDate);
-            const dayDiv = document.createElement("div");
-            dayDiv.className = "day";
-            dayDiv.textContent = getWeekdayLabel(current);
-            dayDiv.dataset.date = isoDate;
-
-            if (isHoliday) {
-              dayDiv.classList.add("empty");
-              dayDiv.title = "Feiertag";
-            } else {
-              dayDiv.onclick = () => toggleSelection(isoDate);
-            }
-
-            dayCells[jsWeekday] = dayDiv;
-          }
-
-          current.setDate(current.getDate() + 1);
-        }
-
-        dayCells.forEach(cell => {
-          if (cell) {
-            calendarDiv.appendChild(cell);
+          if (isHoliday) {
+            dayDiv.classList.add("empty");
+            dayDiv.title = "Feiertag";
           } else {
-            const empty = document.createElement("div");
-            empty.className = "day empty";
-            empty.textContent = "-";
-            calendarDiv.appendChild(empty);
+            dayDiv.onclick = () => toggleSelection(isoDate);
           }
-        });
+
+          dayCells[jsWeekday] = dayDiv;
+        }
+
+        current.setDate(current.getDate() + 1);
       }
 
-      refreshUI();
-    }
-
-    function addParticipant() {
-      const name = newNameInput.value.trim();
-      if (!name || state.participants[name]) return;
-
-      state.participants[name] = new Set();
-      state.colors[name] = randomColor();
-      updateParticipantSelect(name);
-      newNameInput.value = "";
-    }
-
-    function updateParticipantSelect(selectName = null) {
-      participantSelect.innerHTML = "";
-
-      Object.keys(state.participants).forEach(name => {
-        const option = document.createElement("option");
-        option.value = name;
-        option.textContent = name;
-        participantSelect.appendChild(option);
+      dayCells.forEach(cell => {
+        calendarDiv.appendChild(cell || Object.assign(document.createElement("div"), {
+          className: "day empty",
+          textContent: "-"
+        }));
       });
-
-      if (selectName) {
-        participantSelect.value = selectName;
-        state.selectedPerson = selectName;
-      } else if (Object.keys(state.participants).length > 0) {
-        state.selectedPerson = participantSelect.value;
-      }
-
-      refreshUI();
     }
 
-    participantSelect.addEventListener("change", () => {
+    refreshUI();
+  }
+
+  function updateParticipantSelect(selectName = null) {
+    participantSelect.innerHTML = "";
+
+    Object.keys(state.participants).forEach(name => {
+      const option = document.createElement("option");
+      option.value = name;
+      option.textContent = name;
+      participantSelect.appendChild(option);
+    });
+
+    if (selectName) {
+      participantSelect.value = selectName;
+      state.selectedPerson = selectName;
+    } else if (Object.keys(state.participants).length > 0) {
       state.selectedPerson = participantSelect.value;
-      refreshUI();
-    });
+    }
 
-    function toggleSelection(date) {
-      const person = state.selectedPerson;
-      if (!person) return;
+    refreshUI();
+  }
 
-      const selections = state.participants[person];
-      if (selections.has(date)) {
-        selections.delete(date);
-      } else {
-        selections.add(date);
+  participantSelect.addEventListener("change", () => {
+    state.selectedPerson = participantSelect.value;
+    refreshUI();
+  });
+
+  function addParticipant() {
+    const name = newNameInput.value.trim();
+    if (!name || state.participants[name]) return;
+
+    state.participants[name] = new Set();
+    state.colors[name] = randomColor();
+    updateParticipantSelect(name);
+    newNameInput.value = "";
+  }
+
+  function renameParticipant() {
+    const oldName = state.selectedPerson;
+    const newName = prompt("Neuer Name für " + oldName + ":");
+    if (!newName || state.participants[newName]) return;
+
+    state.participants[newName] = state.participants[oldName];
+    state.colors[newName] = state.colors[oldName];
+
+    delete state.participants[oldName];
+    delete state.colors[oldName];
+
+    const oldRef = ref(db, "participants/" + oldName);
+    const newRef = ref(db, "participants/" + newName);
+
+    set(newRef, Array.from(state.participants[newName]));
+    remove(oldRef);
+
+    updateParticipantSelect(newName);
+  }
+
+  function deleteParticipant() {
+    const name = state.selectedPerson;
+    if (!name || !confirm(`Möchtest du "${name}" wirklich löschen?`)) return;
+
+    delete state.participants[name];
+    delete state.colors[name];
+
+    const refToDelete = ref(db, "participants/" + name);
+    remove(refToDelete);
+
+    updateParticipantSelect();
+  }
+
+  function toggleSelection(date) {
+    const person = state.selectedPerson;
+    if (!person) return;
+
+    const selections = state.participants[person];
+    selections.has(date) ? selections.delete(date) : selections.add(date);
+    refreshUI();
+  }
+
+  function refreshUI() {
+    const allDates = [...document.querySelectorAll(".day")].filter(d => !d.classList.contains("empty"));
+
+    allDates.forEach(div => {
+      const date = div.dataset.date;
+      let count = 0;
+      let ownSelection = false;
+
+      for (const [name, dates] of Object.entries(state.participants)) {
+        if (dates.has(date)) {
+          count++;
+          if (name === state.selectedPerson) ownSelection = true;
+        }
       }
 
-      refreshUI();
-    }
-
-    function refreshUI() {
-      const allDates = [...document.querySelectorAll(".day")].filter(d => !d.classList.contains("empty"));
-
-      allDates.forEach(div => {
-        const date = div.dataset.date;
-        let count = 0;
-        let ownSelection = false;
-
-        for (const [name, dates] of Object.entries(state.participants)) {
-          if (dates.has(date)) {
-            count++;
-            if (name === state.selectedPerson) {
-              ownSelection = true;
-            }
-          }
-        }
-
-        div.classList.toggle("selected", ownSelection);
-        div.classList.toggle("full-match", count === Object.keys(state.participants).length && count > 0);
-        div.style.backgroundColor = getIntensityColor(count);
-      });
-    }
-
-    function saveSelections() {
-      const person = state.selectedPerson;
-      if (!person) return;
-
-      const dates = Array.from(state.participants[person]);
-      set(ref(db, "participants/" + person), dates)
-        .then(() => alert("Auswahl gespeichert für: " + person))
-        .catch(err => console.error("Fehler beim Speichern:", err));
-    }
-
-    function getIntensityColor(count) {
-      const colors = ["#fff", "#d2f8d2", "#a6f0a6", "#6ce66c", "#33cc33"];
-      return colors[count] || "#28a428";
-    }
-
-    function randomColor() {
-      const colors = ["#FFB6C1", "#87CEFA", "#90EE90", "#FFD700", "#FFA07A", "#DA70D6"];
-      return colors[Math.floor(Math.random() * colors.length)];
-    }
-
-    generateCalendar();
-
-    onValue(ref(db, "participants"), snapshot => {
-      const data = snapshot.val() || {};
-      state.participants = {};
-      Object.keys(data).forEach(name => {
-        state.participants[name] = new Set(data[name]);
-        if (!state.colors[name]) {
-          state.colors[name] = randomColor();
-        }
-      });
-
-      updateParticipantSelect();
-      refreshUI();
+      div.classList.toggle("selected", ownSelection);
+      div.classList.toggle("full-match", count === Object.keys(state.participants).length && count > 0);
+      div.style.backgroundColor = getIntensityColor(count);
     });
-  </script>
+  }
 
+  function saveSelections() {
+    const person = state.selectedPerson;
+    if (!person) return;
+
+    const dates = Array.from(state.participants[person]);
+    set(ref(db, "participants/" + person), dates)
+      .then(() => alert("Auswahl gespeichert für: " + person))
+      .catch(err => console.error("Fehler beim Speichern:", err));
+  }
+
+  function getIntensityColor(count) {
+    const shades = ["#ffffff", "#b2f2bb", "#69db7c", "#38d9a9", "#20c997", "#12b886", "#0ca678"];
+    return shades[count] || "#099268";
+  }
+
+  function randomColor() {
+    const colors = ["#FFB6C1", "#87CEFA", "#90EE90", "#FFD700", "#FFA07A", "#DA70D6"];
+    return colors[Math.floor(Math.random() * colors.length)];
+  }
+
+  generateCalendar();
+
+  // Echtzeit-Updates
+  onValue(ref(db, "participants"), (snapshot) => {
+    const data = snapshot.val() || {};
+    state.participants = {};
+    Object.keys(data).forEach(name => {
+      state.participants[name] = new Set(data[name]);
+      if (!state.colors[name]) state.colors[name] = randomColor();
+    });
+
+    updateParticipantSelect();
+    refreshUI();
+  });
+</script>
 </body>
 </html>
