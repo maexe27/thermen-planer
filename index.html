@@ -243,16 +243,24 @@
     }
 
     function renameParticipant() {
-      const oldName = state.selectedPerson;
-      const newName = newNameInput.value.trim();
-      if (!oldName || !newName || state.participants[newName]) return;
-      state.participants[newName] = state.participants[oldName];
-      delete state.participants[oldName];
-      set(ref(db, "participants/" + newName), Array.from(state.participants[newName]));
-      remove(ref(db, "participants/" + oldName));
-      updateSelect(newName);
-      newNameInput.value = "";
-    }
+  const oldName = participantSelect.value;
+  const newName = prompt("Neuer Name für " + oldName + ":");
+  if (!newName || newName === oldName || state.participants[newName]) return;
+
+  const dates = state.participants[oldName];
+  delete state.participants[oldName];
+  state.participants[newName] = dates;
+
+  // Optional: Farbe mitnehmen
+  state.colors[newName] = state.colors[oldName] || randomColor();
+  delete state.colors[oldName];
+
+  set(ref(db, "participants/" + newName), Array.from(dates));
+  set(ref(db, "participants/" + oldName), null);
+
+  updateParticipantSelect(newName); // wichtig: damit der neue direkt ausgewählt ist
+}
+
 
     function deleteParticipant() {
       const name = state.selectedPerson;
