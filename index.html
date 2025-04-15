@@ -11,9 +11,7 @@
       margin: auto;
     }
 
-    h1 {
-      margin-bottom: 10px;
-    }
+    h1 { margin-bottom: 10px; }
 
     .controls {
       margin-bottom: 20px;
@@ -25,9 +23,7 @@
       gap: 8px;
     }
 
-    .week {
-      display: contents;
-    }
+    .week { display: contents; }
 
     .day {
       border: 1px solid #ccc;
@@ -46,17 +42,11 @@
       font-style: italic;
     }
 
-    .day.selected {
-      border: 2px solid #333;
-    }
+    .day.selected { border: 2px solid #333; }
 
-    .day.full-match {
-      border: 2px solid red !important;
-    }
+    .day.full-match { border: 2px solid red !important; }
 
-    .day:hover:not(.empty) {
-      background-color: #f0f0f0;
-    }
+    .day:hover:not(.empty) { background-color: #f0f0f0; }
 
     input, select, button {
       margin-right: 10px;
@@ -80,6 +70,36 @@
 
   <div id="calendar" class="calendar"></div>
 
+  <script type="module">
+    // Firebase SDKs importieren
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-analytics.js";
+    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBNw4eFo3Bq48tH7TMcR3mrkSmZ0klpljQ",
+      authDomain: "thermen-planer.firebaseapp.com",
+      databaseURL: "https://thermen-planer-default-rtdb.firebaseio.com",
+      projectId: "thermen-planer",
+      storageBucket: "thermen-planer.appspot.com",
+      messagingSenderId: "924234640899",
+      appId: "1:924234640899:web:87c4274ff2e6defb45e836",
+      measurementId: "G-PC37HL4JB3"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getDatabase(app);
+
+    // Damit der Zugriff im normalen <script> möglich ist:
+    window.firebaseDB = {
+      db,
+      ref,
+      set,
+      onValue
+    };
+  </script>
+
   <script>
     const calendarDiv = document.getElementById("calendar");
     const participantSelect = document.getElementById("participant");
@@ -87,8 +107,7 @@
 
     const startDate = new Date("2025-04-28");
     const endDate = new Date("2025-06-06");
-
-    const holidays = ["2025-05-01", "2025-05-29"]; // Feiertage
+    const holidays = ["2025-05-01", "2025-05-29"];
     const weekdays = ["Mo", "Di", "Mi", "Do", "Fr"];
 
     const state = {
@@ -102,7 +121,6 @@
     }
 
     function getWeekdayNumber(jsDay) {
-      // JS: 0=So, 1=Mo, ..., 6=Sa → Wir: 0=Mo, ..., 4=Fr
       return jsDay === 0 ? 6 : jsDay - 1;
     }
 
@@ -112,25 +130,20 @@
 
     function generateCalendar() {
       calendarDiv.innerHTML = "";
-
       let current = new Date(startDate);
 
       while (current <= endDate) {
         const weekRow = document.createElement("div");
         weekRow.className = "week";
-
-        // Baue leere Woche (5 Felder Mo–Fr)
         const dayCells = new Array(5).fill(null);
 
         for (let i = 0; i < 7 && current <= endDate; i++) {
-          const weekday = current.getDay(); // 0=So, ..., 6=Sa
+          const weekday = current.getDay();
           const jsWeekday = getWeekdayNumber(weekday);
-
           const isoDate = formatDate(current);
 
           if (jsWeekday >= 0 && jsWeekday <= 4) {
             const isHoliday = holidays.includes(isoDate);
-
             const dayDiv = document.createElement("div");
             dayDiv.className = "day";
             dayDiv.textContent = getWeekdayLabel(current);
@@ -149,7 +162,6 @@
           current.setDate(current.getDate() + 1);
         }
 
-        // Füge Woche zur Kalender-Grid hinzu
         dayCells.forEach(cell => {
           if (cell) {
             calendarDiv.appendChild(cell);
@@ -238,19 +250,18 @@
     }
 
     function saveSelections() {
-  const person = state.selectedPerson;
-  if (!person) return;
+      const person = state.selectedPerson;
+      if (!person) return;
 
-  const dates = Array.from(state.participants[person]);
-  db.ref("participants/" + person).set(dates)
-    .then(() => {
-      alert("Auswahl gespeichert für: " + person);
-    })
-    .catch(err => {
-      console.error("Fehler beim Speichern:", err);
-    });
-}
-
+      const dates = Array.from(state.participants[person]);
+      firebaseDB.set(firebaseDB.ref(firebaseDB.db, "participants/" + person), dates)
+        .then(() => {
+          alert("Auswahl gespeichert für: " + person);
+        })
+        .catch(err => {
+          console.error("Fehler beim Speichern:", err);
+        });
+    }
 
     function getIntensityColor(count) {
       const colors = ["#fff", "#d2f8d2", "#a6f0a6", "#6ce66c", "#33cc33"];
@@ -263,44 +274,24 @@
     }
 
     generateCalendar();
-    db.ref("participants").on("value", (snapshot) => {
-  const data = snapshot.val() || {};
-  state.participants = {};
-  Object.keys(data).forEach(name => {
-    state.participants[name] = new Set(data[name]);
-    if (!state.colors[name]) {
-      state.colors[name] = randomColor();
-    }
-  });
 
-  updateParticipantSelect();
-  refreshUI();
-});
+    // Daten aus Firebase laden
+    window.addEventListener("load", () => {
+      firebaseDB.onValue(firebaseDB.ref(firebaseDB.db, "participants"), (snapshot) => {
+        const data = snapshot.val() || {};
+        state.participants = {};
+        Object.keys(data).forEach(name => {
+          state.participants[name] = new Set(data[name]);
+          if (!state.colors[name]) {
+            state.colors[name] = randomColor();
+          }
+        });
 
+        updateParticipantSelect();
+        refreshUI();
+      });
+    });
   </script>
-<script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-analytics.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
 
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-  const firebaseConfig = {
-    apiKey: "AIzaSyBNw4eFo3Bq48tH7TMcR3mrkSmZ0klpljQ",
-    authDomain: "thermen-planer.firebaseapp.com",
-    databaseURL: "https://thermen-planer-default-rtdb.firebaseio.com",
-    projectId: "thermen-planer",
-    storageBucket: "thermen-planer.firebasestorage.app",
-    messagingSenderId: "924234640899",
-    appId: "1:924234640899:web:87c4274ff2e6defb45e836",
-    measurementId: "G-PC37HL4JB3"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-</script>
 </body>
 </html>
