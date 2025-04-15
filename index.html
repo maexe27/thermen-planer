@@ -164,11 +164,12 @@ ${d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}`
     });
 
     addBtn.addEventListener('click', () => {
-      const name = prompt('Neuer Teilnehmername:');
-      if (name && !selections[name]) {
-        set(ref(db, name), []);
-      }
-    });
+  const name = prompt('Neuer Teilnehmername:');
+  if (name && !selections[name]) {
+    set(ref(db, `participants/${name}`), []);
+  }
+});
+
 
     renameBtn.addEventListener('click', () => {
       const oldName = participantSelect.value;
