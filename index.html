@@ -3,71 +3,98 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Thermen-Planer</title>
+  <title>Thermen Planer</title>
   <style>
     body {
-      font-family: sans-serif;
-      background: #f0f4f8;
+      font-family: 'Segoe UI', sans-serif;
       margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    h1 {
-      margin-top: 20px;
+      background: #f4f6f8;
+      padding: 1rem;
       color: #333;
     }
-    #controls {
-      margin: 20px 0;
+    h1 {
+      text-align: center;
+      margin-bottom: 1.5rem;
     }
-    #calendar {
+    .controls, .actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    select, button {
+      font-size: 1rem;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .calendar {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      gap: 10px;
-      width: 95%;
-      max-width: 600px;
+      gap: 0.5rem;
+      justify-items: center;
     }
     .day {
-      padding: 10px;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      background-color: white;
+      border-radius: 10px;
+      padding: 0.75rem;
       text-align: center;
-      cursor: pointer;
-      transition: background 0.2s ease;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 120px;
     }
     .day.selected {
-      background: #4caf50;
-      color: white;
+      border: 2px solid #007bff;
+      background-color: #e7f1ff;
+    }
+    .date {
+      font-size: 1.2rem;
       font-weight: bold;
     }
-    #participantSelect {
-      margin-bottom: 10px;
+    .weekday {
+      font-size: 0.9rem;
+      color: #666;
+    }
+    @media (max-width: 600px) {
+      .calendar {
+        grid-template-columns: repeat(5, 1fr);
+      }
     }
   </style>
 </head>
 <body>
-  <h1>Thermen-Planer</h1>
-  <div id="controls">
+  <h1>Thermen Planer</h1>
+  <div class="controls">
+    <label for="participantSelect">Teilnehmer:</label>
     <select id="participantSelect"></select>
-    <button id="addBtn">➕</button>
-    <button id="renameBtn">✏️</button>
-    <button id="deleteBtn">🗑️</button>
-    <button id="saveBtn">💾 Speichern</button>
   </div>
-  <div id="calendar"></div>
+  <div class="actions">
+    <button id="addBtn">Teilnehmer hinzufügen</button>
+    <button id="renameBtn">Teilnehmer umbenennen</button>
+    <button id="deleteBtn">Teilnehmer löschen</button>
+    <button id="saveBtn">Auswahl speichern</button>
+  </div>
+  <div class="calendar" id="calendar"></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-    import { getDatabase, ref, set, get, onValue, remove } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+    import { getDatabase, ref, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBNw4eFo3Bq48tH7TMcR3mrkSmZ0klpljQ",
       authDomain: "thermen-planer.firebaseapp.com",
       databaseURL: "https://thermen-planer-default-rtdb.firebaseio.com",
       projectId: "thermen-planer",
-      storageBucket: "thermen-planer.appspot.com",
+      storageBucket: "thermen-planer.firebasestorage.app",
       messagingSenderId: "924234640899",
       appId: "1:924234640899:web:87c4274ff2e6defb45e836",
       measurementId: "G-PC37HL4JB3"
@@ -83,51 +110,50 @@
     const deleteBtn = document.getElementById('deleteBtn');
     const saveBtn = document.getElementById('saveBtn');
 
-    let selections = {};
+    const selections = {};
 
-    const startDate = new Date("2024-04-26");
-    const endDate = new Date("2024-05-12");
+    const startDate = new Date('2024-04-28');
+    const endDate = new Date('2024-05-12');
 
-    function getDateRange(start, end) {
-      const dates = [];
-      let current = new Date(start);
-      while (current <= end) {
-        dates.push(new Date(current));
-        current.setDate(current.getDate() + 1);
-      }
-      return dates;
+    function formatDate(date) {
+      return date.toISOString().split('T')[0];
     }
 
-    function renderCalendar() {
+    function renderCalendar(selected = []) {
       calendar.innerHTML = '';
-      const selected = selections[participantSelect.value] || [];
-      getDateRange(startDate, endDate).forEach(date => {
+      let currentDate = new Date(startDate);
+      while (currentDate <= endDate) {
         const dayDiv = document.createElement('div');
         dayDiv.className = 'day';
-        const day = date.toLocaleDateString('de-DE', { weekday: 'short' });
-        const datum = date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
-        dayDiv.innerHTML = `<div>${day}</div><div>${datum}</div>`;
-        const dateStr = date.toISOString().split('T')[0];
-        dayDiv.dataset.date = dateStr;
-        if (selected.includes(dateStr)) {
+        const weekday = currentDate.toLocaleDateString('de-DE', { weekday: 'short' });
+        const date = currentDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+        dayDiv.innerHTML = `<div class="weekday">${weekday}</div><div class="date">${date}</div>`;
+        dayDiv.dataset.date = formatDate(currentDate);
+        if (selected.includes(formatDate(currentDate))) {
           dayDiv.classList.add('selected');
         }
         dayDiv.addEventListener('click', () => {
           dayDiv.classList.toggle('selected');
         });
         calendar.appendChild(dayDiv);
-      });
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
     }
 
-    function updateParticipantSelect() {
-      participantSelect.innerHTML = '';
-      Object.keys(selections).forEach(name => {
-        const option = document.createElement('option');
-        option.value = name;
-        option.textContent = name;
-        participantSelect.appendChild(option);
+    function loadParticipants() {
+      onValue(ref(db, 'participants'), (snapshot) => {
+        const data = snapshot.val() || {};
+        participantSelect.innerHTML = '';
+        Object.keys(data).forEach(name => {
+          selections[name] = data[name];
+          const option = document.createElement('option');
+          option.value = name;
+          option.textContent = name;
+          participantSelect.appendChild(option);
+        });
+        const selected = participantSelect.value;
+        if (selected) renderCalendar(selections[selected] || []);
       });
-      renderCalendar();
     }
 
     addBtn.addEventListener('click', () => {
@@ -139,13 +165,13 @@
 
     renameBtn.addEventListener('click', () => {
       const oldName = participantSelect.value;
-      const newName = prompt('Neuer Name für den Teilnehmer:', oldName);
-      if (newName && oldName !== newName && !selections[newName]) {
-        const userRef = ref(db, `participants/${oldName}`);
-        get(userRef).then(snapshot => {
-          const data = snapshot.val();
-          set(ref(db, `participants/${newName}`), data);
-          remove(userRef);
+      const newName = prompt('Neuer Name:', oldName);
+      if (newName && newName !== oldName) {
+        const updates = {};
+        updates[`participants/${newName}`] = selections[oldName] || [];
+        updates[`participants/${oldName}`] = null;
+        update(ref(db), updates).then(() => {
+          participantSelect.value = newName;
         });
       }
     });
@@ -159,19 +185,16 @@
 
     saveBtn.addEventListener('click', () => {
       const name = participantSelect.value;
-      const selectedDates = Array.from(document.querySelectorAll('.day.selected')).map(div => div.dataset.date);
+      const selectedDates = Array.from(document.querySelectorAll('.day.selected')).map(d => d.dataset.date);
       set(ref(db, `participants/${name}`), selectedDates);
     });
 
-    onValue(ref(db, 'participants'), snapshot => {
-      selections = snapshot.val() || {};
-      const current = participantSelect.value;
-      updateParticipantSelect();
-      if (current && selections[current]) {
-        participantSelect.value = current;
-      }
-      renderCalendar();
+    participantSelect.addEventListener('change', () => {
+      const name = participantSelect.value;
+      renderCalendar(selections[name] || []);
     });
+
+    loadParticipants();
   </script>
 </body>
 </html>
