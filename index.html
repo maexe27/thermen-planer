@@ -66,6 +66,10 @@
       padding: 6px 8px;
     }
 
+    body {
+      font-size: 1rem;
+    }
+
     @media (max-width: 600px) {
       .day {
         padding: 4px;
@@ -76,9 +80,11 @@
       .controls {
         flex-direction: column;
         align-items: stretch;
+        gap: 6px;
       }
 
       .controls > * {
+        flex: 1 1 auto;
         width: 100%;
       }
     }
