@@ -5,132 +5,166 @@
   <title>Thermen-Terminplaner</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
+    :root {
+      --primary: #4CAF50;
+      --primary-light: #d4edda;
+      --bg: #f9f9f9;
+      --card-bg: white;
+      --border-radius: 12px;
+      --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
     * {
       box-sizing: border-box;
     }
 
     body {
-      font-family: sans-serif;
+      margin: 0;
       padding: 20px;
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: #333;
       max-width: 960px;
-      margin: auto;
-      font-size: 1rem;
+      margin-inline: auto;
     }
 
     h1 {
-      margin-bottom: 20px;
       text-align: center;
+      margin-bottom: 20px;
+      color: var(--primary);
+    }
+
+    .card {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 20px;
     }
 
     .controls {
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      margin-bottom: 20px;
+      gap: 12px;
     }
 
-    .controls label,
-    .controls select,
-    .controls input,
-    .controls button {
+    .controls-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .controls-row > * {
+      flex: 1;
+      min-width: 140px;
+    }
+
+    button, select, input {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: var(--border-radius);
       font-size: 1rem;
     }
 
-    .row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
+    button {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
     }
 
-    .row > * {
-      flex: 1 1 auto;
-      min-width: 120px;
+    button:hover {
+      background-color: #45a049;
     }
 
     .calendar {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      gap: 8px;
+      gap: 10px;
     }
 
     .day {
-      border: 2px solid #ccc;
+      background: white;
+      border: 2px solid #eee;
+      border-radius: var(--border-radius);
       padding: 10px;
-      border-radius: 6px;
       text-align: center;
       cursor: pointer;
-      transition: background-color 0.3s ease, border 0.3s ease;
       font-size: 0.9rem;
-      min-height: 50px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 4px;
+      transition: 0.2s;
     }
 
-    .day.empty {
-      background-color: #eee;
-      cursor: default;
-      color: #888;
-      font-style: italic;
-    }
-
-    .day.selected {
-      border: 3px solid #007BFF;
-      background-color: #D0E8FF;
-    }
-
-    .day.full-match {
-      border-color: #FF5733 !important;
+    .day span {
+      display: block;
     }
 
     .day:hover:not(.empty) {
       background-color: #f0f0f0;
     }
 
-    @media (max-width: 600px) {
-      .day {
-        padding: 4px;
-        font-size: 0.75rem;
-      }
+    .day.selected {
+      border: 2px solid #333;
+      background-color: #e3f2e3;
+    }
 
-      .controls .row {
-        flex-direction: column;
+    .day.full-match {
+      border-color: red;
+    }
+
+    .day.empty {
+      background: #eee;
+      color: #aaa;
+      cursor: default;
+      font-style: italic;
+    }
+
+    @media (max-width: 600px) {
+      .calendar {
+        grid-template-columns: repeat(5, 1fr);
         gap: 6px;
       }
 
-      .row > * {
-        width: 100%;
+      .day {
+        padding: 6px;
+        font-size: 0.75rem;
+      }
+
+      .controls-row {
+        flex-direction: column;
       }
     }
   </style>
 </head>
 <body>
+
   <h1>Thermen-Terminplaner 🧖‍♀️</h1>
 
-  <div class="controls">
-    <div class="row">
+  <div class="card controls">
+    <div class="controls-row">
       <label for="participant">Teilnehmer:</label>
       <select id="participant"></select>
     </div>
-    <div class="row">
+
+    <div class="controls-row">
       <input type="text" id="newName" placeholder="Neuer Name" />
-      <button id="addBtn">Hinzufügen</button>
-      <button id="renameBtn">Umbenennen</button>
-      <button id="deleteBtn">Löschen</button>
+      <button onclick="addParticipant()">➕ Hinzufügen</button>
+      <button onclick="renameParticipant()">✏️ Umbenennen</button>
+      <button onclick="deleteParticipant()">❌ Löschen</button>
     </div>
-    <div class="row">
-      <button id="saveBtn">💾 Auswahl speichern</button>
+
+    <div class="controls-row">
+      <button onclick="saveSelections()">💾 Auswahl speichern</button>
     </div>
   </div>
 
-  <div id="calendar" class="calendar"></div>
+  <div id="calendar" class="calendar card"></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
     import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
 
-    const firebaseConfig = {
+    const app = initializeApp({
       apiKey: "AIzaSyBNw4eFo3Bq48tH7TMcR3mrkSmZ0klpljQ",
       authDomain: "thermen-planer.firebaseapp.com",
       databaseURL: "https://thermen-planer-default-rtdb.firebaseio.com",
@@ -139,35 +173,31 @@
       messagingSenderId: "924234640899",
       appId: "1:924234640899:web:87c4274ff2e6defb45e836",
       measurementId: "G-PC37HL4JB3"
-    };
+    });
 
-    const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-
-    const calendarDiv = document.getElementById("calendar");
     const participantSelect = document.getElementById("participant");
     const newNameInput = document.getElementById("newName");
-    const addBtn = document.getElementById("addBtn");
-    const renameBtn = document.getElementById("renameBtn");
-    const deleteBtn = document.getElementById("deleteBtn");
-    const saveBtn = document.getElementById("saveBtn");
+    const calendarDiv = document.getElementById("calendar");
 
     const startDate = new Date("2025-04-28");
     const endDate = new Date("2025-06-06");
-
     const holidays = ["2025-05-01", "2025-05-29"];
+    const weekdays = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
 
     const state = {
       participants: {},
-      selectedPerson: null,
+      selectedPerson: null
     };
 
     function formatDate(date) {
       return date.toISOString().split("T")[0];
     }
 
-    function getWeekdayNumber(jsDay) {
-      return jsDay === 0 ? 6 : jsDay - 1;
+    function formatLabel(date) {
+      const wd = weekdays[date.getDay()];
+      const label = date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+      return { wd, label };
     }
 
     function generateCalendar() {
@@ -175,135 +205,121 @@
       let current = new Date(startDate);
 
       while (current <= endDate) {
-        const dayCells = new Array(5).fill(null);
+        const dayOfWeek = current.getDay();
+        const isoDate = formatDate(current);
 
-        for (let i = 0; i < 7 && current <= endDate; i++) {
-          const weekday = getWeekdayNumber(current.getDay());
-          const isoDate = formatDate(current);
+        if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+          const div = document.createElement("div");
+          div.className = "day";
+          div.dataset.date = isoDate;
 
-          if (weekday >= 0 && weekday <= 4) {
-            const dayDiv = document.createElement("div");
-            dayDiv.className = "day";
-            const dayLabel = current.toLocaleDateString("de-DE", { weekday: "short" });
-            const dateLabel = current.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
-            dayDiv.innerHTML = `<div>${dayLabel}</div><div>${dateLabel}</div>`;
-            dayDiv.dataset.date = isoDate;
+          const { wd, label } = formatLabel(current);
+          div.innerHTML = `<span>${wd}</span><span>${label}</span>`;
 
-            if (holidays.includes(isoDate)) {
-              dayDiv.classList.add("empty");
-              dayDiv.title = "Feiertag";
-            } else {
-              dayDiv.onclick = () => toggleSelection(isoDate);
-            }
-
-            dayCells[weekday] = dayDiv;
+          if (holidays.includes(isoDate)) {
+            div.classList.add("empty");
+            div.title = "Feiertag";
+          } else {
+            div.onclick = () => toggleSelection(isoDate);
           }
 
-          current.setDate(current.getDate() + 1);
+          calendarDiv.appendChild(div);
         }
 
-        dayCells.forEach(cell => {
-          calendarDiv.appendChild(cell || Object.assign(document.createElement("div"), {
-            className: "day empty",
-            textContent: "-"
-          }));
-        });
+        current.setDate(current.getDate() + 1);
       }
 
       refreshUI();
     }
 
-    function toggleSelection(date) {
-      const person = state.selectedPerson;
-      if (!person) return;
-      const selections = state.participants[person];
-
-      if (selections.has(date)) selections.delete(date);
-      else selections.add(date);
-
-      refreshUI();
-    }
-
-    function refreshUI() {
-      document.querySelectorAll(".day").forEach(div => {
-        if (div.classList.contains("empty")) return;
-        const date = div.dataset.date;
-        let count = 0;
-        let ownSelection = false;
-
-        for (const [name, dates] of Object.entries(state.participants)) {
-          if (dates.has(date)) {
-            count++;
-            if (name === state.selectedPerson) ownSelection = true;
-          }
-        }
-
-        div.classList.toggle("selected", ownSelection);
-        div.classList.toggle("full-match", count === Object.keys(state.participants).length && count > 0);
-        div.style.backgroundColor = getIntensityColor(count);
-      });
-    }
-
-    function getIntensityColor(count) {
-      const colors = ["#fff", "#d2f8d2", "#a6f0a6", "#6ce66c", "#33cc33"];
-      return colors[count] || "#28a428";
-    }
-
-    function updateParticipantSelect(selectName = null) {
-      participantSelect.innerHTML = "";
-      Object.keys(state.participants).forEach(name => {
-        const option = document.createElement("option");
-        option.value = name;
-        option.textContent = name;
-        participantSelect.appendChild(option);
-      });
-      if (selectName) participantSelect.value = selectName;
-      state.selectedPerson = participantSelect.value;
-      refreshUI();
-    }
-
-    addBtn.onclick = () => {
+    function addParticipant() {
       const name = newNameInput.value.trim();
       if (!name || state.participants[name]) return;
       state.participants[name] = new Set();
-      updateParticipantSelect(name);
+      updateSelect(name);
       newNameInput.value = "";
-    };
+    }
 
-    renameBtn.onclick = () => {
+    function renameParticipant() {
       const oldName = state.selectedPerson;
       const newName = newNameInput.value.trim();
-      if (!oldName || !newName || oldName === newName || state.participants[newName]) return;
+      if (!oldName || !newName || state.participants[newName]) return;
+
       state.participants[newName] = state.participants[oldName];
       delete state.participants[oldName];
-      remove(ref(db, "participants/" + oldName));
+
       set(ref(db, "participants/" + newName), Array.from(state.participants[newName]));
-      updateParticipantSelect(newName);
-    };
+      remove(ref(db, "participants/" + oldName));
 
-    deleteBtn.onclick = () => {
-      const person = state.selectedPerson;
-      if (!person) return;
-      delete state.participants[person];
-      remove(ref(db, "participants/" + person));
-      updateParticipantSelect();
-    };
+      updateSelect(newName);
+      newNameInput.value = "";
+    }
 
-    saveBtn.onclick = () => {
-      const person = state.selectedPerson;
-      if (!person) return;
-      const dates = Array.from(state.participants[person]);
-      set(ref(db, "participants/" + person), dates)
-        .then(() => alert("Auswahl gespeichert für: " + person))
-        .catch(err => console.error("Fehler beim Speichern:", err));
-    };
+    function deleteParticipant() {
+      const name = state.selectedPerson;
+      if (!name) return;
+      delete state.participants[name];
+      remove(ref(db, "participants/" + name));
+      updateSelect();
+    }
+
+    function updateSelect(focusName = null) {
+      participantSelect.innerHTML = "";
+      Object.keys(state.participants).forEach(name => {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        participantSelect.appendChild(opt);
+      });
+
+      state.selectedPerson = focusName || participantSelect.value;
+      refreshUI();
+    }
 
     participantSelect.addEventListener("change", () => {
       state.selectedPerson = participantSelect.value;
       refreshUI();
     });
 
-    generateCalendar();
+    function toggleSelection(date) {
+      const name = state.selectedPerson;
+      if (!name) return;
+
+      const set = state.participants[name];
+      if (set.has(date)) {
+        set.delete(date);
+      } else {
+        set.add(date);
+      }
+      refreshUI();
+    }
+
+    function refreshUI() {
+      document.querySelectorAll(".day").forEach(div => {
+        const date = div.dataset.date;
+        const all = Object.values(state.participants).filter(s => s.has(date));
+        const own = state.participants[state.selectedPerson]?.has(date);
+
+        div.classList.toggle("selected", own);
+        div.classList.toggle("full-match", all.length === Object.keys(state.participants).length && all.length > 0);
+
+        div.style.backgroundColor = getIntensityColor(all.length);
+      });
+    }
+
+    function getIntensityColor(count) {
+      const colors = ["#fff", "#e6f7ec", "#b3ebc8", "#79df9e", "#4CAF50"];
+      return colors[count] || "#3da940";
+    }
+
+    function saveSelections() {
+      const name = state.selectedPerson;
+      if (!name) return;
+      const dates = Array.from(state.participants[name]);
+      set(ref(db, "participants/" + name), dates)
+        .then(() => alert("Auswahl gespeichert für: " + name))
+        .catch(err => console.error("Fehler beim Speichern:", err));
+    }
 
     onValue(ref(db, "participants"), snapshot => {
       const data = snapshot.val() || {};
@@ -311,8 +327,11 @@
       Object.keys(data).forEach(name => {
         state.participants[name] = new Set(data[name]);
       });
-      updateParticipantSelect();
+      updateSelect();
     });
+
+    generateCalendar();
   </script>
+
 </body>
 </html>
