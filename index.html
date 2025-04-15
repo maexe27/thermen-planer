@@ -11,28 +11,28 @@
       margin: auto;
       font-size: 1rem;
     }
-
+  
     h1 {
       margin-bottom: 10px;
     }
-
+  
     .controls {
       margin-bottom: 20px;
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
     }
-
+  
     .calendar {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
       gap: 8px;
     }
-
+  
     .week {
       display: contents;
     }
-
+  
     .day {
       border: 1px solid #ccc;
       padding: 10px;
@@ -42,51 +42,49 @@
       transition: background-color 0.3s ease, border 0.3s ease;
       min-height: 50px;
     }
-
+  
     .day.empty {
       background-color: #eee;
       cursor: default;
       color: #888;
       font-style: italic;
     }
-
+  
     .day.selected {
       border: 2px solid #333;
     }
-
+  
     .day.full-match {
       border: 2px solid red !important;
     }
-
+  
     .day:hover:not(.empty) {
       background-color: #f0f0f0;
     }
-
+  
     input, select, button {
       padding: 6px 8px;
     }
-
-    media (max-width: 600px) {
+  
+    @media (max-width: 600px) {
       .day {
         padding: 4px;
         font-size: 0.75rem;
       }
-
+  
       .controls {
         flex-direction: column;
         align-items: stretch;
         gap: 6px;
       }
-
+  
       .controls > * {
         flex: 1 1 auto;
         width: 100%;
       }
     }
-    body {
-  font-size: 1rem;
-}
   </style>
+  
 </head>
 <body>
 
