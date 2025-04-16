@@ -140,7 +140,6 @@
     }
 
     function loadParticipants() {
-      console.log("🔄 Lade Teilnehmer …");
       onValue(ref(db, 'participants'), (snapshot) => {
         const data = snapshot.val() || {};
         participantSelect.innerHTML = '';
@@ -152,90 +151,63 @@
           participantSelect.appendChild(option);
         });
         const selected = participantSelect.value;
-        if (selected) {
-          console.log("📌 Auswahl geändert:", selected);
-          renderCalendar(selections[selected] || []);
-        }
+        if (selected) renderCalendar(selections[selected] || []);
       });
     }
 
     addBtn.addEventListener('click', () => {
-  const name = prompt('Neuer Teilnehmername:');
-  if (name && !selections[name]) {
-    set(ref(db, `participants/${name}`), [])
-      .then(() => {
-        console.log("✅ Teilnehmer gespeichert:", name);
-        onValue(ref(db, 'participants'), (snapshot) => {
-          const data = snapshot.val() || {};
-          participantSelect.innerHTML = '';
-          Object.keys(data).forEach(part => {
-            const option = document.createElement('option');
-            option.value = part;
-            option.textContent = part;
-            participantSelect.appendChild(option);
+      const name = prompt('Neuer Teilnehmername:');
+      if (name && !selections[name]) {
+        set(ref(db, `participants/${name}`), [])
+          .then(() => {
+            console.log("✅ Teilnehmer gespeichert:", name);
+            loadParticipants();
+          })
+          .catch((error) => {
+            console.error("❌ Fehler beim Speichern:", error);
           });
-          participantSelect.value = name;
-          renderCalendar([]);
-        }, { onlyOnce: true });
-      })
-      .catch((error) => {
-        console.error("❌ Fehler beim Speichern:", error);
-      });
-  } else {
-    console.warn("⚠️ Kein Name eingegeben oder Name existiert schon");
-  }
-});
-
-
-        }
       } else {
         console.warn("⚠️ Kein Name eingegeben oder Name existiert schon");
       }
     });
 
-    renameBtn.addEventListener('click', async () => {
+    renameBtn.addEventListener('click', () => {
       const oldName = participantSelect.value;
       const newName = prompt('Neuer Name:', oldName);
       if (newName && newName !== oldName) {
         const updates = {};
         updates[`participants/${newName}`] = selections[oldName] || [];
         updates[`participants/${oldName}`] = null;
-        try {
-          await update(ref(db), updates);
+        update(ref(db), updates).then(() => {
           participantSelect.value = newName;
-          console.log("✏️ Teilnehmer umbenannt:", oldName, "→", newName);
-        } catch (error) {
-          console.error("❌ Fehler beim Umbenennen:", error.message);
-        }
+          loadParticipants();
+        });
       }
     });
 
-    deleteBtn.addEventListener('click', async () => {
+    deleteBtn.addEventListener('click', () => {
       const name = participantSelect.value;
       if (name && confirm(`${name} wirklich löschen?`)) {
-        try {
-          await remove(ref(db, `participants/${name}`));
-          console.log("🗑️ Teilnehmer gelöscht:", name);
-        } catch (error) {
-          console.error("❌ Fehler beim Löschen:", error.message);
-        }
+        remove(ref(db, `participants/${name}`)).then(() => {
+          loadParticipants();
+        });
       }
     });
 
-    saveBtn.addEventListener('click', async () => {
+    saveBtn.addEventListener('click', () => {
       const name = participantSelect.value;
       const selectedDates = Array.from(document.querySelectorAll('.day.selected')).map(d => d.dataset.date);
-      try {
-        await set(ref(db, `participants/${name}`), selectedDates);
-        console.log("💾 Auswahl gespeichert für", name, "→", selectedDates);
-      } catch (error) {
-        console.error("❌ Fehler beim Speichern:", error.message);
-      }
+      set(ref(db, `participants/${name}`), selectedDates)
+        .then(() => {
+          console.log("💾 Auswahl gespeichert für:", name);
+        })
+        .catch((err) => {
+          console.error("❌ Fehler beim Speichern der Auswahl:", err);
+        });
     });
 
     participantSelect.addEventListener('change', () => {
       const name = participantSelect.value;
-      console.log("📌 Auswahl geändert:", name);
       renderCalendar(selections[name] || []);
     });
 
