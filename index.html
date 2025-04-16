@@ -86,8 +86,6 @@
   <div class="calendar" id="calendar"></div>
 
   <script type="module">
-    console.log("🧪 Skript wird geladen…");
-
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
     import { getDatabase, ref, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
 
@@ -113,7 +111,6 @@
     const saveBtn = document.getElementById('saveBtn');
 
     const selections = {};
-
     const startDate = new Date('2024-04-28');
     const endDate = new Date('2024-05-12');
 
@@ -154,66 +151,67 @@
           option.textContent = name;
           participantSelect.appendChild(option);
         });
-
-        // Wenn keine Teilnehmer vorhanden sind, Standard-Testuser anlegen
-        if (Object.keys(data).length === 0) {
-          const defaultName = "TestUser";
-          console.log("🆕 Kein Teilnehmer vorhanden – lege TestUser an");
-          set(ref(db, `participants/${defaultName}`), []).then(() => {
-            participantSelect.innerHTML = `<option value="${defaultName}">${defaultName}</option>`;
-            selections[defaultName] = [];
-            renderCalendar([]);
-          });
-        } else {
-          const selected = participantSelect.value;
-          if (selected) renderCalendar(selections[selected] || []);
+        const selected = participantSelect.value;
+        if (selected) {
+          console.log("📌 Auswahl geändert:", selected);
+          renderCalendar(selections[selected] || []);
         }
       });
     }
 
-    addBtn.addEventListener('click', () => {
+    addBtn.addEventListener('click', async () => {
       console.log("➕ Add-Button geklickt");
       const name = prompt('Neuer Teilnehmername:');
       if (name && !selections[name]) {
-        set(ref(db, `participants/${name}`), []).then(() => {
+        try {
+          await set(ref(db, `participants/${name}`), []);
           console.log("✅ Teilnehmer gespeichert:", name);
-        }).catch((error) => {
-          console.error("❌ Fehler beim Speichern:", error);
-        });
+        } catch (error) {
+          console.error("❌ Fehler beim Speichern:", error.message);
+        }
       } else {
         console.warn("⚠️ Kein Name eingegeben oder Name existiert schon");
       }
     });
 
-    renameBtn.addEventListener('click', () => {
+    renameBtn.addEventListener('click', async () => {
       const oldName = participantSelect.value;
       const newName = prompt('Neuer Name:', oldName);
       if (newName && newName !== oldName) {
         const updates = {};
         updates[`participants/${newName}`] = selections[oldName] || [];
         updates[`participants/${oldName}`] = null;
-        update(ref(db), updates).then(() => {
-          console.log(`✏️ ${oldName} umbenannt in ${newName}`);
+        try {
+          await update(ref(db), updates);
           participantSelect.value = newName;
-        });
+          console.log("✏️ Teilnehmer umbenannt:", oldName, "→", newName);
+        } catch (error) {
+          console.error("❌ Fehler beim Umbenennen:", error.message);
+        }
       }
     });
 
-    deleteBtn.addEventListener('click', () => {
+    deleteBtn.addEventListener('click', async () => {
       const name = participantSelect.value;
       if (name && confirm(`${name} wirklich löschen?`)) {
-        remove(ref(db, `participants/${name}`)).then(() => {
-          console.log(`🗑️ ${name} gelöscht`);
-        });
+        try {
+          await remove(ref(db, `participants/${name}`));
+          console.log("🗑️ Teilnehmer gelöscht:", name);
+        } catch (error) {
+          console.error("❌ Fehler beim Löschen:", error.message);
+        }
       }
     });
 
-    saveBtn.addEventListener('click', () => {
+    saveBtn.addEventListener('click', async () => {
       const name = participantSelect.value;
       const selectedDates = Array.from(document.querySelectorAll('.day.selected')).map(d => d.dataset.date);
-      set(ref(db, `participants/${name}`), selectedDates).then(() => {
-        console.log(`💾 Auswahl für ${name} gespeichert:`, selectedDates);
-      });
+      try {
+        await set(ref(db, `participants/${name}`), selectedDates);
+        console.log("💾 Auswahl gespeichert für", name, "→", selectedDates);
+      } catch (error) {
+        console.error("❌ Fehler beim Speichern:", error.message);
+      }
     });
 
     participantSelect.addEventListener('change', () => {
@@ -226,4 +224,3 @@
   </script>
 </body>
 </html>
-
