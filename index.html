@@ -144,7 +144,8 @@
         const data = snapshot.val() || {};
         participantSelect.innerHTML = '';
         Object.keys(data).forEach(name => {
-          selections[name] = data[name];
+          const filtered = (data[name] || []).filter(date => date !== "init");
+          selections[name] = filtered;
           const option = document.createElement('option');
           option.value = name;
           option.textContent = name;
@@ -156,29 +157,28 @@
     }
 
     addBtn.addEventListener('click', () => {
-  const name = prompt('Neuer Teilnehmername:');
-  if (name && !selections[name]) {
-    console.log("🟡 Teilnehmer wird hinzugefügt:", name);
-    const initialValue = ["init"]; // Verhindert automatisches Löschen
-    set(ref(db, `participants/${name}`), initialValue)
-      .then(() => {
-        console.log("✅ Teilnehmer erfolgreich hinzugefügt");
-      })
-      .catch((error) => {
-        console.error("❌ Fehler beim Hinzufügen:", error);
-      });
-  } else {
-    console.warn("⚠️ Kein Name eingegeben oder Name existiert schon");
-  }
-});
-
+      const name = prompt('Neuer Teilnehmername:');
+      if (name && !selections[name]) {
+        console.log("🟡 Teilnehmer wird hinzugefügt:", name);
+        const initialValue = ["init"]; // Verhindert automatisches Löschen
+        set(ref(db, `participants/${name}`), initialValue)
+          .then(() => {
+            console.log("✅ Teilnehmer erfolgreich hinzugefügt");
+          })
+          .catch((error) => {
+            console.error("❌ Fehler beim Hinzufügen:", error);
+          });
+      } else {
+        console.warn("⚠️ Kein Name eingegeben oder Name existiert schon");
+      }
+    });
 
     renameBtn.addEventListener('click', () => {
       const oldName = participantSelect.value;
       const newName = prompt('Neuer Name:', oldName);
       if (newName && newName !== oldName) {
         const updates = {};
-        updates[`participants/${newName}`] = selections[oldName] || [];
+        updates[`participants/${newName}`] = selections[oldName] || ["init"];
         updates[`participants/${oldName}`] = null;
         update(ref(db), updates).then(() => {
           participantSelect.value = newName;
@@ -197,24 +197,16 @@
     });
 
     saveBtn.addEventListener('click', () => {
-  const name = participantSelect.value;
-  let selectedDates = Array.from(document.querySelectorAll('.day.selected')).map(d => d.dataset.date);
-
-  // Falls keine Auswahl getroffen wurde, setzen wir ein leeres Array,
-  // das ersetzt "init" bei der ersten Speicherung
-  if (selectedDates.length === 0) {
-    selectedDates = [];
-  }
-
-  set(ref(db, `participants/${name}`), selectedDates)
-    .then(() => {
-      console.log("💾 Auswahl gespeichert für:", name, selectedDates);
-    })
-    .catch((error) => {
-      console.error("❌ Fehler beim Speichern:", error);
+      const name = participantSelect.value;
+      let selectedDates = Array.from(document.querySelectorAll('.day.selected')).map(d => d.dataset.date);
+      set(ref(db, `participants/${name}`), selectedDates)
+        .then(() => {
+          console.log("💾 Auswahl gespeichert für:", name, selectedDates);
+        })
+        .catch((error) => {
+          console.error("❌ Fehler beim Speichern:", error);
+        });
     });
-});
-
 
     participantSelect.addEventListener('change', () => {
       const name = participantSelect.value;
@@ -222,7 +214,6 @@
     });
 
     loadParticipants();
-
   </script>
 </body>
 </html>
