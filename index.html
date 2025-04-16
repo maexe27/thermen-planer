@@ -399,16 +399,26 @@
 
     deleteBtn.addEventListener('click', () => {
   const name = participantSelect.value;
-  if (name && confirm(`${name} wirklich löschen?`)) {
-    remove(ref(db, `participants/${name}`)).then(() => {
-      // 🧹 Lokale Daten löschen
-      delete selections[name];
+  const participantsRef = ref(db, 'participants');
 
-      // 🔄 Teilnehmerliste neu laden und Kalender aktualisieren
-      loadParticipants();
-    });
-  }
+  onValue(participantsRef, (snapshot) => {
+    const data = snapshot.val() || {};
+    const numberOfParticipants = Object.keys(data).length;
+
+    if (numberOfParticipants <= 1) {
+      alert("❗ Der letzte Teilnehmer kann nicht gelöscht werden.");
+      return;
+    }
+
+    if (name && confirm(`${name} wirklich löschen?`)) {
+      remove(ref(db, `participants/${name}`)).then(() => {
+        delete selections[name];
+        loadParticipants();
+      });
+    }
+  }, { onlyOnce: true });
 });
+
 
 
 
