@@ -5,69 +5,93 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Thermen Planer</title>
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       font-family: 'Segoe UI', sans-serif;
       margin: 0;
-      background: #f4f6f8;
-      padding: 1rem;
+      padding: 2rem;
+      background: linear-gradient(to right, #e0f7fa, #fff);
       color: #333;
     }
+
     h1 {
       text-align: center;
-      margin-bottom: 1.5rem;
+      font-size: 2rem;
+      margin-bottom: 2rem;
+      color: #00796b;
     }
+
     .controls, .actions {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
     }
+
     select, button {
-      font-size: 1rem;
-      padding: 0.5rem 1rem;
-      border: none;
+      padding: 0.6rem 1rem;
       border-radius: 8px;
-      cursor: pointer;
+      border: none;
+      font-size: 1rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
+
+    select {
+      background-color: #fff;
+      color: #333;
+    }
+
     button {
-      background-color: #007bff;
+      background-color: #00796b;
       color: white;
+      transition: background-color 0.3s ease;
     }
+
     button:hover {
-      background-color: #0056b3;
+      background-color: #004d40;
     }
+
     .calendar {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      gap: 0.5rem;
-      justify-items: center;
+      gap: 1rem;
+      max-width: 700px;
+      margin: 0 auto;
     }
+
     .day {
       background-color: white;
-      border-radius: 10px;
-      padding: 0.75rem;
+      border-radius: 12px;
+      padding: 1rem;
       text-align: center;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-      width: 100%;
-      max-width: 120px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      transition: all 0.2s ease-in-out;
     }
+
+    .day:hover {
+      transform: scale(1.03);
+      background-color: #f1fdfd;
+    }
+
     .day.selected {
-      border: 2px solid #007bff;
-      background-color: #e7f1ff;
+      background-color: #b2dfdb;
+      border: 2px solid #00796b;
+      color: #004d40;
     }
+
     .date {
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       font-weight: bold;
     }
+
     .weekday {
       font-size: 0.9rem;
       color: #666;
-    }
-    @media (max-width: 600px) {
-      .calendar {
-        grid-template-columns: repeat(5, 1fr);
-      }
     }
   </style>
 </head>
@@ -122,19 +146,22 @@
       calendar.innerHTML = '';
       let currentDate = new Date(startDate);
       while (currentDate <= endDate) {
-        const dayDiv = document.createElement('div');
-        dayDiv.className = 'day';
-        const weekday = currentDate.toLocaleDateString('de-DE', { weekday: 'short' });
-        const date = currentDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
-        dayDiv.innerHTML = `<div class="weekday">${weekday}</div><div class="date">${date}</div>`;
-        dayDiv.dataset.date = formatDate(currentDate);
-        if (selected.includes(formatDate(currentDate))) {
-          dayDiv.classList.add('selected');
+        const dateStr = formatDate(currentDate);
+        if (currentDate.getDay() !== 0 && currentDate.getDay() !== 6) { // Nur Montag–Freitag
+          const dayDiv = document.createElement('div');
+          dayDiv.className = 'day';
+          const weekday = currentDate.toLocaleDateString('de-DE', { weekday: 'short' });
+          const date = currentDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+          dayDiv.innerHTML = `<div class="weekday">${weekday}</div><div class="date">${date}</div>`;
+          dayDiv.dataset.date = dateStr;
+          if (selected.includes(dateStr)) {
+            dayDiv.classList.add('selected');
+          }
+          dayDiv.addEventListener('click', () => {
+            dayDiv.classList.toggle('selected');
+          });
+          calendar.appendChild(dayDiv);
         }
-        dayDiv.addEventListener('click', () => {
-          dayDiv.classList.toggle('selected');
-        });
-        calendar.appendChild(dayDiv);
         currentDate.setDate(currentDate.getDate() + 1);
       }
     }
@@ -144,7 +171,7 @@
         const data = snapshot.val() || {};
         participantSelect.innerHTML = '';
         Object.keys(data).forEach(name => {
-          const filtered = (data[name] || []).filter(date => date !== "init");
+          const filtered = (data[name] || []).filter(d => d !== "init");
           selections[name] = filtered;
           const option = document.createElement('option');
           option.value = name;
@@ -160,7 +187,7 @@
       const name = prompt('Neuer Teilnehmername:');
       if (name && !selections[name]) {
         console.log("🟡 Teilnehmer wird hinzugefügt:", name);
-        const initialValue = ["init"]; // Verhindert automatisches Löschen
+        const initialValue = ["init"];
         set(ref(db, `participants/${name}`), initialValue)
           .then(() => {
             console.log("✅ Teilnehmer erfolgreich hinzugefügt");
@@ -178,7 +205,7 @@
       const newName = prompt('Neuer Name:', oldName);
       if (newName && newName !== oldName) {
         const updates = {};
-        updates[`participants/${newName}`] = selections[oldName] || ["init"];
+        updates[`participants/${newName}`] = selections[oldName] || [];
         updates[`participants/${oldName}`] = null;
         update(ref(db), updates).then(() => {
           participantSelect.value = newName;
