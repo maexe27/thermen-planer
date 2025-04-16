@@ -164,10 +164,18 @@
       const name = prompt('Neuer Teilnehmername:');
       if (name && !selections[name]) {
         try {
-          await set(ref(db, `participants/${name}`), []);
-          console.log("✅ Teilnehmer gespeichert:", name);
-        } catch (error) {
-          console.error("❌ Fehler beim Speichern:", error.message);
+            set(ref(db, `participants/${name}`), [])
+  .then(() => {
+    console.log("✅ Teilnehmer gespeichert:", name);
+    // 👇 manuell neu laden:
+    loadParticipants();
+    participantSelect.value = name;
+    renderCalendar([]);
+  })
+  .catch((error) => {
+    console.error("❌ Fehler beim Speichern:", error);
+  });
+
         }
       } else {
         console.warn("⚠️ Kein Name eingegeben oder Name existiert schon");
