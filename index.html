@@ -87,7 +87,7 @@
     }
 
     .day.selected {
-      outline: 4px solid #013cff;
+      outline: 4px solid #060708;
       outline-offset: -3px;
       position: relative;
       z-index: 1;
@@ -97,10 +97,10 @@
     .day.highlight-2 { background-color: #c8e6c9; }
     .day.highlight-3 { background-color: #a5d6a7; }
     .day.highlight-4 { background-color: #81c784; }
-    .day.highlight-5 { background-color: #66bb6a; }
+    .day.highlight-5 { background-color: #64ff6cf5; }
 
     .day.most-selected-own {
-      background-color: #4CAF50 !important;
+      background-color: #ff0000 !important;
       border: 3px solid #1976d2;
       color: white;
       font-weight: bold;
@@ -172,14 +172,15 @@
       }
 
       .calendar {
-        grid-template-columns: repeat(5, 1fr);
-        gap: 0.5rem;
-        width: 90vw;
-        margin: 0 auto;
-        padding: 0;
-        transform: scale(0.9);
-        transform-origin: top center;
-      }
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
+  width: 90vw;
+  margin: 0 auto;
+  padding: 0;
+  transform: scale(0.9);
+  transform-origin: top center;
+}
+
 
       .day {
         padding: 0.5rem;
@@ -260,7 +261,7 @@
       });
 
       const maxCount = Math.max(...Object.values(counts), 1);
-      const mostSelectedDates = Object.keys(counts).filter(d => counts[d] === maxCount);
+      const mostSelectedDates = Object.keys(counts).filter(d => counts[d] >= 4);
 
       let currentDate = new Date(startDate);
 
@@ -280,17 +281,18 @@
 
           const count = counts[dateStr] || 0;
 
-          if (count > 0 && !selected.includes(dateStr)) {
-            const intensity = Math.min(5, Math.ceil((count / maxCount) * 5));
-            dayDiv.classList.add(`highlight-${intensity}`);
-          }
+          if (count > 0) {
+  const intensity = Math.min(5, Math.ceil((count / maxCount) * 5));
+  dayDiv.classList.add(`highlight-${intensity}`);
+}
 
-          if (selected.includes(dateStr)) {
-            dayDiv.classList.add('selected');
-            if (mostSelectedDates.includes(dateStr)) {
-              dayDiv.classList.add('most-selected-own');
-            }
-          }
+if (selected.includes(dateStr)) {
+  dayDiv.classList.add('selected');
+  if (mostSelectedDates.includes(dateStr)) {
+    dayDiv.classList.add('most-selected-own');
+  }
+}
+
 
           const weekday = currentDate.toLocaleDateString('de-DE', { weekday: 'short' });
           const date = currentDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
