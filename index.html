@@ -86,10 +86,27 @@
     }
   
     .day.selected {
-      background-color: #bbdefb;
-      border-color: #1976d2;
-      color: #0d47a1;
-    }
+  background-color: #e3f2fd;
+  border: 3px solid #1565c0;
+  color: #0d47a1;
+}
+
+.day.highlight-1 {
+  background-color: #e8f5e9;
+}
+.day.highlight-2 {
+  background-color: #c8e6c9;
+}
+.day.highlight-3 {
+  background-color: #a5d6a7;
+}
+.day.highlight-4 {
+  background-color: #81c784;
+}
+.day.highlight-5 {
+  background-color: #66bb6a;
+}
+
   
     .day.holiday {
       background-color: #f0f0f0;
@@ -205,53 +222,62 @@
     }
 
     function renderCalendar(selected = []) {
-      calendar.innerHTML = '';
-      let currentDate = new Date(startDate);
+  calendar.innerHTML = '';
 
-      // Alle Stimmen pro Tag zählen
-      const voteCounts = {};
-      Object.values(selections).forEach(arr => {
-        arr.forEach(date => {
-          if (date !== "init") voteCounts[date] = (voteCounts[date] || 0) + 1;
-        });
-      });
-      const maxVotes = Math.max(...Object.values(voteCounts), 0);
-
-      while (currentDate <= endDate) {
-        const dateStr = formatDate(currentDate);
-        const dayOfWeek = currentDate.getDay();
-        if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-          const isHoliday = holidays.includes(dateStr);
-          const dayDiv = document.createElement('div');
-          dayDiv.className = 'day';
-          if (isHoliday) dayDiv.classList.add('holiday');
-
-          const weekday = currentDate.toLocaleDateString('de-DE', { weekday: 'short' });
-          const date = currentDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
-          dayDiv.innerHTML = `<div class="weekday">${weekday}</div><div class="date">${date}</div>`;
-          dayDiv.dataset.date = dateStr;
-
-          if (selected.includes(dateStr)) {
-            dayDiv.classList.add('selected');
-          }
-
-          // Heatmap einfärben
-          if (!isHoliday && voteCounts[dateStr]) {
-            const intensity = Math.round(255 - (voteCounts[dateStr] / maxVotes) * 120);
-            dayDiv.style.backgroundColor = `rgb(${intensity}, ${intensity + 10}, 255)`;
-          }
-
-          if (!isHoliday) {
-            dayDiv.addEventListener('click', () => {
-              dayDiv.classList.toggle('selected');
-            });
-          }
-
-          calendar.appendChild(dayDiv);
-        }
-        currentDate.setDate(currentDate.getDate() + 1);
+  // Anzahl der Zusagen pro Tag berechnen
+  const counts = {};
+  Object.values(selections).forEach(list => {
+    list.forEach(date => {
+      if (date !== "init") {
+        counts[date] = (counts[date] || 0) + 1;
       }
+    });
+  });
+
+  const maxCount = Math.max(...Object.values(counts), 1); // gegen 0 schützen
+  let currentDate = new Date(startDate);
+
+  while (currentDate <= endDate) {
+    const dateStr = formatDate(currentDate);
+    const dayOfWeek = currentDate.getDay();
+    const isHoliday = holidays.includes(dateStr);
+
+    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+      const dayDiv = document.createElement('div');
+      dayDiv.className = 'day';
+      dayDiv.dataset.date = dateStr;
+
+      if (isHoliday) {
+        dayDiv.classList.add('holiday');
+      }
+
+      const count = counts[dateStr] || 0;
+      if (count > 0 && !selected.includes(dateStr)) {
+        const intensity = Math.min(5, Math.ceil((count / maxCount) * 5));
+        dayDiv.classList.add(`highlight-${intensity}`);
+      }
+
+      if (selected.includes(dateStr)) {
+        dayDiv.classList.add('selected');
+      }
+
+      const weekday = currentDate.toLocaleDateString('de-DE', { weekday: 'short' });
+      const date = currentDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+      dayDiv.innerHTML = `<div class="weekday">${weekday}</div><div class="date">${date}</div>`;
+
+      if (!isHoliday) {
+        dayDiv.addEventListener('click', () => {
+          dayDiv.classList.toggle('selected');
+        });
+      }
+
+      calendar.appendChild(dayDiv);
     }
+
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+}
+
 
     function loadParticipants(selectName = null) {
       onValue(ref(db, 'participants'), (snapshot) => {
