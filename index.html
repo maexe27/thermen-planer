@@ -141,20 +141,39 @@
     }
 
     function loadParticipants() {
-      onValue(ref(db, 'participants'), (snapshot) => {
-        const data = snapshot.val() || {};
-        participantSelect.innerHTML = '';
-        Object.keys(data).forEach(name => {
-          selections[name] = data[name];
-          const option = document.createElement('option');
-          option.value = name;
-          option.textContent = name;
-          participantSelect.appendChild(option);
-        });
-        const selected = participantSelect.value;
-        if (selected) renderCalendar(selections[selected] || []);
+  onValue(ref(db, 'participants'), (snapshot) => {
+    const data = snapshot.val() || {};
+    participantSelect.innerHTML = '';
+    const names = Object.keys(data);
+
+    // Teilnehmer-Optionen aufbauen
+    names.forEach(name => {
+      selections[name] = data[name];
+      const option = document.createElement('option');
+      option.value = name;
+      option.textContent = name;
+      participantSelect.appendChild(option);
+    });
+
+    // ❗ Wenn keine Teilnehmer existieren: Default-Teilnehmer hinzufügen
+    if (names.length === 0) {
+      const defaultName = "Teilnehmer 1";
+      console.log("➕ Kein Teilnehmer vorhanden – füge Standardteilnehmer hinzu:", defaultName);
+      set(ref(db, `participants/${defaultName}`), []).then(() => {
+        // Nach Anlage nochmals laden
+        loadParticipants();
       });
+      return;
     }
+
+    // Aktuell ausgewählten Teilnehmer anzeigen
+    const selected = participantSelect.value;
+    if (selected) {
+      renderCalendar(selections[selected] || []);
+    }
+  });
+}
+
 
     addBtn.addEventListener('click', () => {
       const name = prompt('Neuer Teilnehmername:');
