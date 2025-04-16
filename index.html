@@ -226,6 +226,16 @@
     });
 
     loadParticipants();
+
+    set(ref(db, 'participants/TestUser'), ['2024-04-28', '2024-04-30'])
+  .then(() => {
+    console.log("🎉 TestUser erfolgreich in Firebase gespeichert");
+  })
+  .catch((error) => {
+    console.error("❌ Fehler beim Test-Schreiben:", error);
+    alert("Fehler beim Test-Schreiben: " + error.message);
+  });
+
   </script>
 </body>
 </html>
