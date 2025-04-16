@@ -10,18 +10,18 @@
     }
   
     body {
-      font-family: 'Poppins', 'Segoe UI', sans-serif;
+      font-family: 'Segoe UI', sans-serif;
       margin: 0;
       padding: 1rem;
-      background: linear-gradient(to bottom right, #d2f1f0, #fefefe);
-      color: #1a1a1a;
+      background: linear-gradient(to bottom, #f5faff, #ffffff);
+      color: #2c2c2c;
     }
   
     h1 {
       text-align: center;
       font-size: 2rem;
       margin-bottom: 1.5rem;
-      color: #00897b;
+      color: #1976d2;
     }
   
     .controls,
@@ -38,27 +38,25 @@
     input[type="text"],
     button {
       padding: 0.6rem 1rem;
-      border-radius: 12px;
-      border: 2px solid #b2dfdb;
+      border-radius: 10px;
+      border: 1px solid #cfd8dc;
       font-size: 1rem;
-      max-width: 100%;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
       background-color: #ffffff;
-      color: #1a1a1a;
+      color: #2c2c2c;
       transition: all 0.2s ease;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
     }
   
     button {
-      background-color: #00897b;
+      background-color: #1976d2;
       color: white;
-      border: none;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
       font-weight: 500;
+      border: none;
     }
   
     button:hover {
-      background-color: #004d40;
-      transform: scale(1.03);
+      background-color: #1565c0;
+      transform: scale(1.02);
     }
   
     .calendar {
@@ -71,35 +69,34 @@
     }
   
     .day {
-      background-color: white;
+      background-color: #ffffff;
       border-radius: 12px;
       padding: 0.8rem;
       text-align: center;
       cursor: pointer;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      border: 2px solid #e0e0e0;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
       transition: all 0.2s ease-in-out;
-      border: 2px solid #b2dfdb;
-      font-weight: 600;
-      color: #1a1a1a;
+      font-weight: 500;
     }
   
     .day:hover {
-      background-color: #e0f7fa;
+      background-color: #e3f2fd;
       transform: scale(1.03);
     }
   
     .day.selected {
-      background-color: #b2dfdb;
-      border: 2px solid #00897b;
-      color: #004d40;
+      background-color: #bbdefb;
+      border-color: #1976d2;
+      color: #0d47a1;
     }
   
     .day.holiday {
       background-color: #f0f0f0;
-      color: #aaa;
+      color: #999;
+      border: none;
       cursor: not-allowed;
       pointer-events: none;
-      border: none;
     }
   
     .date {
@@ -157,6 +154,7 @@
       }
     }
   </style>
+  
   
 </head>
 <body>
