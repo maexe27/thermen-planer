@@ -156,20 +156,22 @@
     }
 
     addBtn.addEventListener('click', () => {
-      const name = prompt('Neuer Teilnehmername:');
-      if (name && !selections[name]) {
-        set(ref(db, `participants/${name}`), [])
-          .then(() => {
-            console.log("✅ Teilnehmer gespeichert:", name);
-            loadParticipants();
-          })
-          .catch((error) => {
-            console.error("❌ Fehler beim Speichern:", error);
-          });
-      } else {
-        console.warn("⚠️ Kein Name eingegeben oder Name existiert schon");
-      }
-    });
+  const name = prompt('Neuer Teilnehmername:');
+  if (name && !selections[name]) {
+    console.log("🟡 Teilnehmer wird hinzugefügt:", name);
+    const initialValue = ["init"]; // Verhindert automatisches Löschen
+    set(ref(db, `participants/${name}`), initialValue)
+      .then(() => {
+        console.log("✅ Teilnehmer erfolgreich hinzugefügt");
+      })
+      .catch((error) => {
+        console.error("❌ Fehler beim Hinzufügen:", error);
+      });
+  } else {
+    console.warn("⚠️ Kein Name eingegeben oder Name existiert schon");
+  }
+});
+
 
     renameBtn.addEventListener('click', () => {
       const oldName = participantSelect.value;
@@ -195,16 +197,24 @@
     });
 
     saveBtn.addEventListener('click', () => {
-      const name = participantSelect.value;
-      const selectedDates = Array.from(document.querySelectorAll('.day.selected')).map(d => d.dataset.date);
-      set(ref(db, `participants/${name}`), selectedDates)
-        .then(() => {
-          console.log("💾 Auswahl gespeichert für:", name);
-        })
-        .catch((err) => {
-          console.error("❌ Fehler beim Speichern der Auswahl:", err);
-        });
+  const name = participantSelect.value;
+  let selectedDates = Array.from(document.querySelectorAll('.day.selected')).map(d => d.dataset.date);
+
+  // Falls keine Auswahl getroffen wurde, setzen wir ein leeres Array,
+  // das ersetzt "init" bei der ersten Speicherung
+  if (selectedDates.length === 0) {
+    selectedDates = [];
+  }
+
+  set(ref(db, `participants/${name}`), selectedDates)
+    .then(() => {
+      console.log("💾 Auswahl gespeichert für:", name, selectedDates);
+    })
+    .catch((error) => {
+      console.error("❌ Fehler beim Speichern:", error);
     });
+});
+
 
     participantSelect.addEventListener('change', () => {
       const name = participantSelect.value;
@@ -212,8 +222,7 @@
     });
 
     loadParticipants();
-    const name = "Max"
-    set(ref(db, `participants/${name}`), ["2024-05-01", "2024-05-05"])
+
   </script>
 </body>
 </html>
