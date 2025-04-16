@@ -219,7 +219,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
     import { getDatabase, ref, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
-
+  
     const firebaseConfig = {
       apiKey: "AIzaSyBNw4eFo3Bq48tH7TMcR3mrkSmZ0klpljQ",
       authDomain: "thermen-planer.firebaseapp.com",
@@ -229,32 +229,37 @@
       messagingSenderId: "924234640899",
       appId: "1:924234640899:web:87c4274ff2e6defb45e836"
     };
-
+  
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-
+  
     const participantSelect = document.getElementById('participantSelect');
     const calendar = document.getElementById('calendar');
     const addBtn = document.getElementById('addBtn');
     const renameBtn = document.getElementById('renameBtn');
     const deleteBtn = document.getElementById('deleteBtn');
     const saveBtn = document.getElementById('saveBtn');
-
+  
     const selections = {};
+    const timestamps = {};
     const startDate = new Date('2025-04-28');
     const endDate = new Date('2025-06-06');
     const holidays = ['2025-05-01', '2025-05-29'];
-
+  
     function formatDate(date) {
       return date.toISOString().split('T')[0];
     }
-
+  
+    function formatTimestamp(ts) {
+      return new Date(ts).toLocaleString('de-DE');
+    }
+  
     function renderCalendar(selected = []) {
       calendar.innerHTML = '';
-
+  
       const counts = {};
       const dateToNames = {};
-
+  
       Object.entries(selections).forEach(([name, list]) => {
         list.forEach(date => {
           if (date !== "init") {
@@ -264,112 +269,91 @@
           }
         });
       });
-
+  
       const maxCount = Math.max(...Object.values(counts), 1);
       const mostSelectedDates = Object.keys(counts).filter(d => counts[d] >= 4);
-
+  
       let currentDate = new Date(startDate);
-
       while (currentDate <= endDate) {
         const dateStr = formatDate(currentDate);
         const dayOfWeek = currentDate.getDay();
         const isHoliday = holidays.includes(dateStr);
-
+  
         if (dayOfWeek >= 1 && dayOfWeek <= 5) {
           const dayDiv = document.createElement('div');
           dayDiv.className = 'day';
           dayDiv.dataset.date = dateStr;
-
+  
           if (isHoliday) {
             dayDiv.classList.add('holiday');
           }
-
+  
           const count = counts[dateStr] || 0;
-
           if (count > 0) {
-  const intensity = Math.min(5, Math.ceil((count / maxCount) * 5));
-  dayDiv.classList.add(`highlight-${intensity}`);
-}
-
-if (selected.includes(dateStr)) {
-  dayDiv.classList.add('selected');
-  if (mostSelectedDates.includes(dateStr)) {
-    dayDiv.classList.add('most-selected-own');
-  }
-}
-
-
+            const intensity = Math.min(5, Math.ceil((count / maxCount) * 5));
+            dayDiv.classList.add(`highlight-${intensity}`);
+          }
+  
+          if (selected.includes(dateStr)) {
+            dayDiv.classList.add('selected');
+            if (mostSelectedDates.includes(dateStr)) {
+              dayDiv.classList.add('most-selected-own');
+            }
+          }
+  
           const weekday = currentDate.toLocaleDateString('de-DE', { weekday: 'short' });
           const date = currentDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
           dayDiv.innerHTML = `<div class="weekday">${weekday}</div><div class="date">${date}</div>`;
-
+  
           if (dateToNames[dateStr]) {
             const tooltip = document.createElement('div');
             tooltip.className = 'tooltip';
             tooltip.textContent = dateToNames[dateStr].join("\n");
             dayDiv.appendChild(tooltip);
           }
-
+  
           if (!isHoliday) {
             dayDiv.addEventListener('click', () => {
               dayDiv.classList.toggle('selected');
             });
           }
-
+  
           calendar.appendChild(dayDiv);
         }
-
+  
         currentDate.setDate(currentDate.getDate() + 1);
       }
     }
-
+  
     function renderStats() {
-  const statsDiv = document.getElementById('stats');
-  const voteCounts = {};
-  const participantCounts = {};
-  let maxVotes = 0;
-  let mostSelectedParticipant = '';
-  let mostSelectedDates = [];
-
-  for (const [name, dates] of Object.entries(selections)) {
-    const filteredDates = dates.filter(d => d !== 'init');
-    participantCounts[name] = filteredDates.length;
-
-    if (filteredDates.length > maxVotes) {
-      maxVotes = filteredDates.length;
-      mostSelectedParticipant = name;
+      const statsDiv = document.getElementById('stats');
+      const name = participantSelect.value;
+      const dates = selections[name] || [];
+  
+      const created = timestamps[name]?.createdAt;
+      const updated = timestamps[name]?.updatedAt;
+  
+      let html = '<strong>📊 Mini-Statistik:</strong><br>';
+      if (created) html += `📅 Erstellt am: <strong>${formatTimestamp(created)}</strong><br>`;
+      if (updated) html += `🕒 Zuletzt geändert: <strong>${formatTimestamp(updated)}</strong><br>`;
+      html += `📌 Anzahl gewählter Tage: <strong>${dates.filter(d => d !== "init").length}</strong><br>`;
+  
+      statsDiv.innerHTML = html;
     }
-
-    filteredDates.forEach(date => {
-      voteCounts[date] = (voteCounts[date] || 0) + 1;
-    });
-  }
-
-  const maxVoteCount = Math.max(...Object.values(voteCounts), 0);
-  mostSelectedDates = Object.keys(voteCounts).filter(date => voteCounts[date] === maxVoteCount);
-
-  let html = '<strong>📊 Mini-Statistik:</strong><br>';
-
-  if (mostSelectedDates.length > 0) {
-    html += `🗓️ Beliebtester Tag: <strong>${mostSelectedDates.join(', ')}</strong> mit <strong>${maxVoteCount}</strong> Stimme(n)<br>`;
-  } else {
-    html += '🗓️ Noch keine Auswahl getroffen.<br>';
-  }
-
-  if (mostSelectedParticipant) {
-    html += `🏅 Aktivster Teilnehmer: <strong>${mostSelectedParticipant}</strong> mit <strong>${maxVotes}</strong> gewählten Tagen<br>`;
-  }
-
-  statsDiv.innerHTML = html;
-}
-
+  
     function loadParticipants(selectName = null) {
       onValue(ref(db, 'participants'), (snapshot) => {
         const data = snapshot.val() || {};
         participantSelect.innerHTML = '';
-        Object.keys(data).forEach(name => {
-          const filtered = (data[name] || []).filter(d => d !== "init");
+        Object.entries(data).forEach(([name, value]) => {
+          const dates = value.dates || [];
+          const filtered = dates.filter(d => d !== "init");
           selections[name] = filtered;
+          timestamps[name] = {
+            createdAt: value.createdAt || null,
+            updatedAt: value.updatedAt || null
+          };
+  
           const option = document.createElement('option');
           option.value = name;
           option.textContent = name;
@@ -378,79 +362,92 @@ if (selected.includes(dateStr)) {
         const current = selectName || participantSelect.value;
         participantSelect.value = current;
         renderCalendar(selections[current] || []);
+        renderStats();
       });
     }
-
+  
     addBtn.addEventListener('click', () => {
       const name = prompt('Neuer Teilnehmername:');
       if (name && !selections[name]) {
-        const initialValue = ["init"];
-        set(ref(db, `participants/${name}`), initialValue).then(() => {
+        const now = Date.now();
+        const data = {
+          dates: ["init"],
+          createdAt: now,
+          updatedAt: now
+        };
+        set(ref(db, `participants/${name}`), data).then(() => {
           loadParticipants(name);
         });
       }
     });
-
+  
     renameBtn.addEventListener('click', () => {
       const oldName = participantSelect.value;
       const newName = prompt('Neuer Name:', oldName);
       if (newName && newName !== oldName) {
         const updates = {};
-        updates[`participants/${newName}`] = selections[oldName] || [];
+        updates[`participants/${newName}`] = {
+          dates: selections[oldName],
+          createdAt: timestamps[oldName]?.createdAt || Date.now(),
+          updatedAt: Date.now()
+        };
         updates[`participants/${oldName}`] = null;
         update(ref(db), updates).then(() => {
           loadParticipants(newName);
         });
       }
     });
-
+  
     deleteBtn.addEventListener('click', () => {
-  const name = participantSelect.value;
-  const participantsRef = ref(db, 'participants');
-
-  onValue(participantsRef, (snapshot) => {
-    const data = snapshot.val() || {};
-    const numberOfParticipants = Object.keys(data).length;
-
-    if (numberOfParticipants <= 1) {
-      alert("❗ Der letzte Teilnehmer kann nicht gelöscht werden.");
-      return;
-    }
-
-    if (name && confirm(`${name} wirklich löschen?`)) {
-      remove(ref(db, `participants/${name}`)).then(() => {
-        delete selections[name];
-        loadParticipants();
-      });
-    }
-  }, { onlyOnce: true });
-});
-
-
-
-
+      const name = participantSelect.value;
+      const participantsRef = ref(db, 'participants');
+  
+      onValue(participantsRef, (snapshot) => {
+        const data = snapshot.val() || {};
+        const numberOfParticipants = Object.keys(data).length;
+  
+        if (numberOfParticipants <= 1) {
+          alert("❗ Der letzte Teilnehmer kann nicht gelöscht werden.");
+          return;
+        }
+  
+        if (name && confirm(`${name} wirklich löschen?`)) {
+          remove(ref(db, `participants/${name}`)).then(() => {
+            delete selections[name];
+            loadParticipants();
+          });
+        }
+      }, { onlyOnce: true });
+    });
+  
     saveBtn.addEventListener('click', () => {
       const name = participantSelect.value;
       let selectedDates = Array.from(document.querySelectorAll('.day.selected')).map(d => d.dataset.date);
       if (selectedDates.length === 0) {
         selectedDates = ["init"];
       }
-      set(ref(db, `participants/${name}`), selectedDates).then(() => {
+  
+      const now = Date.now();
+      const data = {
+        dates: selectedDates,
+        createdAt: timestamps[name]?.createdAt || now,
+        updatedAt: now
+      };
+  
+      set(ref(db, `participants/${name}`), data).then(() => {
         loadParticipants(name);
-renderStats();
-
       });
     });
-
+  
     participantSelect.addEventListener('change', () => {
       const name = participantSelect.value;
       renderCalendar(selections[name] || []);
+      renderStats();
     });
-
-    loadParticipants(); 
-renderStats();
-
+  
+    loadParticipants();
   </script>
+  
   <div id="stats" style="text-align: center; margin-top: 2rem; font-size: 1rem; color: #444;"></div>
 
 </body>
