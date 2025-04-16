@@ -88,7 +88,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
     import { getDatabase, ref, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
-
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-analytics.js";
     const firebaseConfig = {
       apiKey: "AIzaSyBNw4eFo3Bq48tH7TMcR3mrkSmZ0klpljQ",
       authDomain: "thermen-planer.firebaseapp.com",
@@ -99,6 +99,12 @@
       appId: "1:924234640899:web:87c4274ff2e6defb45e836",
       measurementId: "G-PC37HL4JB3"
     };
+
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
