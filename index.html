@@ -159,22 +159,33 @@
       });
     }
 
-    addBtn.addEventListener('click', async () => {
-      console.log("➕ Add-Button geklickt");
-      const name = prompt('Neuer Teilnehmername:');
-      if (name && !selections[name]) {
-        try {
-            set(ref(db, `participants/${name}`), [])
-  .then(() => {
-    console.log("✅ Teilnehmer gespeichert:", name);
-    // 👇 manuell neu laden:
-    loadParticipants();
-    participantSelect.value = name;
-    renderCalendar([]);
-  })
-  .catch((error) => {
-    console.error("❌ Fehler beim Speichern:", error);
-  });
+    addBtn.addEventListener('click', () => {
+  const name = prompt('Neuer Teilnehmername:');
+  if (name && !selections[name]) {
+    set(ref(db, `participants/${name}`), [])
+      .then(() => {
+        console.log("✅ Teilnehmer gespeichert:", name);
+        onValue(ref(db, 'participants'), (snapshot) => {
+          const data = snapshot.val() || {};
+          participantSelect.innerHTML = '';
+          Object.keys(data).forEach(part => {
+            const option = document.createElement('option');
+            option.value = part;
+            option.textContent = part;
+            participantSelect.appendChild(option);
+          });
+          participantSelect.value = name;
+          renderCalendar([]);
+        }, { onlyOnce: true });
+      })
+      .catch((error) => {
+        console.error("❌ Fehler beim Speichern:", error);
+      });
+  } else {
+    console.warn("⚠️ Kein Name eingegeben oder Name existiert schon");
+  }
+});
+
 
         }
       } else {
