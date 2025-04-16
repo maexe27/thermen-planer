@@ -78,6 +78,7 @@
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
       transition: all 0.2s ease-in-out;
       font-weight: 500;
+      position: relative;
     }
 
     .day:hover {
@@ -111,6 +112,30 @@
       border: none;
       cursor: not-allowed;
       pointer-events: none;
+    }
+
+    .tooltip {
+      visibility: hidden;
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      padding: 5px;
+      border-radius: 6px;
+      position: absolute;
+      z-index: 10;
+      bottom: 110%;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-size: 0.8rem;
+      white-space: pre-line;
+      max-width: 200px;
+    }
+
+    .day:hover .tooltip {
+      visibility: visible;
+      opacity: 1;
     }
 
     .date {
@@ -221,22 +246,21 @@
     function renderCalendar(selected = []) {
       calendar.innerHTML = '';
 
-      // Auswahl-Zähler
       const counts = {};
-      Object.values(selections).forEach(list => {
+      const dateToNames = {};
+
+      Object.entries(selections).forEach(([name, list]) => {
         list.forEach(date => {
           if (date !== "init") {
             counts[date] = (counts[date] || 0) + 1;
+            if (!dateToNames[date]) dateToNames[date] = [];
+            dateToNames[date].push(name);
           }
         });
       });
 
       const maxCount = Math.max(...Object.values(counts), 1);
       const mostSelectedDates = Object.keys(counts).filter(d => counts[d] === maxCount);
-
-      console.log("counts:", counts);
-      console.log("maxCount:", maxCount);
-      console.log("mostSelectedDates:", mostSelectedDates);
 
       let currentDate = new Date(startDate);
 
@@ -271,6 +295,13 @@
           const weekday = currentDate.toLocaleDateString('de-DE', { weekday: 'short' });
           const date = currentDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
           dayDiv.innerHTML = `<div class="weekday">${weekday}</div><div class="date">${date}</div>`;
+
+          if (dateToNames[dateStr]) {
+            const tooltip = document.createElement('div');
+            tooltip.className = 'tooltip';
+            tooltip.textContent = dateToNames[dateStr].join("\n");
+            dayDiv.appendChild(tooltip);
+          }
 
           if (!isHoliday) {
             dayDiv.addEventListener('click', () => {
