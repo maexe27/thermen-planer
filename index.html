@@ -61,6 +61,7 @@
       gap: 1rem;
       max-width: 700px;
       margin: 0 auto;
+      margin-bottom: 2rem;
     }
 
     .day {
@@ -84,6 +85,17 @@
       color: #004d40;
     }
 
+    .day.holiday {
+      background-color: #eee;
+      color: #aaa;
+      cursor: not-allowed;
+    }
+
+    .day.holiday:hover {
+      background-color: #eee;
+      transform: none;
+    }
+
     .date {
       font-size: 1.1rem;
       font-weight: bold;
@@ -105,9 +117,11 @@
     <button id="addBtn">Teilnehmer hinzufügen</button>
     <button id="renameBtn">Teilnehmer umbenennen</button>
     <button id="deleteBtn">Teilnehmer löschen</button>
-    <button id="saveBtn">Auswahl speichern</button>
   </div>
   <div class="calendar" id="calendar"></div>
+  <div class="actions">
+    <button id="saveBtn">Auswahl speichern</button>
+  </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
@@ -135,8 +149,10 @@
     const saveBtn = document.getElementById('saveBtn');
 
     const selections = {};
-    const startDate = new Date('2024-04-28');
-    const endDate = new Date('2024-05-12');
+    const startDate = new Date('2024-04-29');
+    const endDate = new Date('2024-05-17');
+
+    const feiertage = ['2024-05-01', '2024-05-09']; // Tag der Arbeit, Christi Himmelfahrt
 
     function formatDate(date) {
       return date.toISOString().split('T')[0];
@@ -147,19 +163,27 @@
       let currentDate = new Date(startDate);
       while (currentDate <= endDate) {
         const dateStr = formatDate(currentDate);
-        if (currentDate.getDay() !== 0 && currentDate.getDay() !== 6) { // Nur Montag–Freitag
+        if (currentDate.getDay() >= 1 && currentDate.getDay() <= 5) {
+          const isHoliday = feiertage.includes(dateStr);
           const dayDiv = document.createElement('div');
           dayDiv.className = 'day';
+          if (isHoliday) dayDiv.classList.add('holiday');
+
           const weekday = currentDate.toLocaleDateString('de-DE', { weekday: 'short' });
           const date = currentDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
           dayDiv.innerHTML = `<div class="weekday">${weekday}</div><div class="date">${date}</div>`;
           dayDiv.dataset.date = dateStr;
+
           if (selected.includes(dateStr)) {
             dayDiv.classList.add('selected');
           }
-          dayDiv.addEventListener('click', () => {
-            dayDiv.classList.toggle('selected');
-          });
+
+          if (!isHoliday) {
+            dayDiv.addEventListener('click', () => {
+              dayDiv.classList.toggle('selected');
+            });
+          }
+
           calendar.appendChild(dayDiv);
         }
         currentDate.setDate(currentDate.getDate() + 1);
@@ -186,17 +210,14 @@
     addBtn.addEventListener('click', () => {
       const name = prompt('Neuer Teilnehmername:');
       if (name && !selections[name]) {
-        console.log("🟡 Teilnehmer wird hinzugefügt:", name);
         const initialValue = ["init"];
-        set(ref(db, `participants/${name}`), initialValue)
-          .then(() => {
-            console.log("✅ Teilnehmer erfolgreich hinzugefügt");
-          })
-          .catch((error) => {
-            console.error("❌ Fehler beim Hinzufügen:", error);
-          });
-      } else {
-        console.warn("⚠️ Kein Name eingegeben oder Name existiert schon");
+        set(ref(db, `participants/${name}`), initialValue).then(() => {
+          setTimeout(() => {
+            loadParticipants();
+            participantSelect.value = name;
+            renderCalendar([]);
+          }, 500);
+        });
       }
     });
 
