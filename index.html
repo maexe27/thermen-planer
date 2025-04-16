@@ -86,15 +86,17 @@
   <div class="calendar" id="calendar"></div>
 
   <script type="module">
+    console.log("🧪 Skript wird geladen…");
+
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
     import { getDatabase, ref, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-analytics.js";
+
     const firebaseConfig = {
       apiKey: "AIzaSyBNw4eFo3Bq48tH7TMcR3mrkSmZ0klpljQ",
       authDomain: "thermen-planer.firebaseapp.com",
       databaseURL: "https://thermen-planer-default-rtdb.firebaseio.com",
       projectId: "thermen-planer",
-      storageBucket: "thermen-planer.firebasestorage.app",
+      storageBucket: "thermen-planer.appspot.com",
       messagingSenderId: "924234640899",
       appId: "1:924234640899:web:87c4274ff2e6defb45e836",
       measurementId: "G-PC37HL4JB3"
@@ -141,54 +143,43 @@
     }
 
     function loadParticipants() {
-  onValue(ref(db, 'participants'), (snapshot) => {
-    const data = snapshot.val() || {};
-    participantSelect.innerHTML = '';
-    const names = Object.keys(data);
+      console.log("🔄 Lade Teilnehmer …");
+      onValue(ref(db, 'participants'), (snapshot) => {
+        const data = snapshot.val() || {};
+        participantSelect.innerHTML = '';
+        Object.keys(data).forEach(name => {
+          selections[name] = data[name];
+          const option = document.createElement('option');
+          option.value = name;
+          option.textContent = name;
+          participantSelect.appendChild(option);
+        });
 
-    // Teilnehmer-Optionen aufbauen
-    names.forEach(name => {
-      selections[name] = data[name];
-      const option = document.createElement('option');
-      option.value = name;
-      option.textContent = name;
-      participantSelect.appendChild(option);
-    });
-
-    // ❗ Wenn keine Teilnehmer existieren: Default-Teilnehmer hinzufügen
-    if (names.length === 0) {
-      const defaultName = "Teilnehmer 1";
-      console.log("➕ Kein Teilnehmer vorhanden – füge Standardteilnehmer hinzu:", defaultName);
-      set(ref(db, `participants/${defaultName}`), []).then(() => {
-        // Nach Anlage nochmals laden
-        loadParticipants();
+        // Wenn keine Teilnehmer vorhanden sind, Standard-Testuser anlegen
+        if (Object.keys(data).length === 0) {
+          const defaultName = "TestUser";
+          console.log("🆕 Kein Teilnehmer vorhanden – lege TestUser an");
+          set(ref(db, `participants/${defaultName}`), []).then(() => {
+            participantSelect.innerHTML = `<option value="${defaultName}">${defaultName}</option>`;
+            selections[defaultName] = [];
+            renderCalendar([]);
+          });
+        } else {
+          const selected = participantSelect.value;
+          if (selected) renderCalendar(selections[selected] || []);
+        }
       });
-      return;
     }
-
-    // Aktuell ausgewählten Teilnehmer anzeigen
-    const selected = participantSelect.value;
-    if (selected) {
-      renderCalendar(selections[selected] || []);
-    }
-  });
-}
-
 
     addBtn.addEventListener('click', () => {
+      console.log("➕ Add-Button geklickt");
       const name = prompt('Neuer Teilnehmername:');
       if (name && !selections[name]) {
-        console.log("🟡 Teilnehmer wird hinzugefügt:", name);
-        console.log("Neuer Teilnehmer wird geschrieben nach:", `participants/${name}`);
-        console.log("ref:", ref(db, `participants/${name}`));
-        
-        set(ref(db, `participants/${name}`), [])
-          .then(() => {
-            console.log("✅ Erfolgreich gespeichert");
-          })
-          .catch((error) => {
-            console.error("❌ Fehler beim Speichern:", error);
-          });
+        set(ref(db, `participants/${name}`), []).then(() => {
+          console.log("✅ Teilnehmer gespeichert:", name);
+        }).catch((error) => {
+          console.error("❌ Fehler beim Speichern:", error);
+        });
       } else {
         console.warn("⚠️ Kein Name eingegeben oder Name existiert schon");
       }
@@ -202,6 +193,7 @@
         updates[`participants/${newName}`] = selections[oldName] || [];
         updates[`participants/${oldName}`] = null;
         update(ref(db), updates).then(() => {
+          console.log(`✏️ ${oldName} umbenannt in ${newName}`);
           participantSelect.value = newName;
         });
       }
@@ -210,32 +202,28 @@
     deleteBtn.addEventListener('click', () => {
       const name = participantSelect.value;
       if (name && confirm(`${name} wirklich löschen?`)) {
-        remove(ref(db, `participants/${name}`));
+        remove(ref(db, `participants/${name}`)).then(() => {
+          console.log(`🗑️ ${name} gelöscht`);
+        });
       }
     });
 
     saveBtn.addEventListener('click', () => {
       const name = participantSelect.value;
       const selectedDates = Array.from(document.querySelectorAll('.day.selected')).map(d => d.dataset.date);
-      set(ref(db, `participants/${name}`), selectedDates);
+      set(ref(db, `participants/${name}`), selectedDates).then(() => {
+        console.log(`💾 Auswahl für ${name} gespeichert:`, selectedDates);
+      });
     });
 
     participantSelect.addEventListener('change', () => {
       const name = participantSelect.value;
+      console.log("📌 Auswahl geändert:", name);
       renderCalendar(selections[name] || []);
     });
 
     loadParticipants();
-
-    set(ref(db, 'participants/TestUser'), ['2024-04-28', '2024-04-30'])
-  .then(() => {
-    console.log("🎉 TestUser erfolgreich in Firebase gespeichert");
-  })
-  .catch((error) => {
-    console.error("❌ Fehler beim Test-Schreiben:", error);
-    alert("Fehler beim Test-Schreiben: " + error.message);
-  });
-
   </script>
 </body>
 </html>
+
