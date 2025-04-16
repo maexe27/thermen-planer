@@ -61,7 +61,6 @@
       gap: 1rem;
       max-width: 700px;
       margin: 0 auto;
-      margin-bottom: 2rem;
     }
 
     .day {
@@ -86,14 +85,10 @@
     }
 
     .day.holiday {
-      background-color: #eee;
+      background-color: #f0f0f0;
       color: #aaa;
       cursor: not-allowed;
-    }
-
-    .day.holiday:hover {
-      background-color: #eee;
-      transform: none;
+      pointer-events: none;
     }
 
     .date {
@@ -104,6 +99,12 @@
     .weekday {
       font-size: 0.9rem;
       color: #666;
+    }
+
+    .save-button-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 2rem;
     }
   </style>
 </head>
@@ -119,7 +120,7 @@
     <button id="deleteBtn">Teilnehmer löschen</button>
   </div>
   <div class="calendar" id="calendar"></div>
-  <div class="actions">
+  <div class="save-button-container">
     <button id="saveBtn">Auswahl speichern</button>
   </div>
 
@@ -134,8 +135,7 @@
       projectId: "thermen-planer",
       storageBucket: "thermen-planer.appspot.com",
       messagingSenderId: "924234640899",
-      appId: "1:924234640899:web:87c4274ff2e6defb45e836",
-      measurementId: "G-PC37HL4JB3"
+      appId: "1:924234640899:web:87c4274ff2e6defb45e836"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -152,7 +152,7 @@
     const startDate = new Date('2025-04-28');
     const endDate = new Date('2025-06-06');
 
-    const feiertage = ['2025-05-01', '2025-05-29']; // Tag der Arbeit, Christi Himmelfahrt
+    const holidays = ['2025-05-01', '2025-05-29']; // Feiertage Bayern zw. Oster- und Pfingstferien
 
     function formatDate(date) {
       return date.toISOString().split('T')[0];
@@ -163,34 +163,31 @@
       let currentDate = new Date(startDate);
       while (currentDate <= endDate) {
         const dateStr = formatDate(currentDate);
-        if (currentDate.getDay() >= 1 && currentDate.getDay() <= 5) {
-          const isHoliday = feiertage.includes(dateStr);
+        const dayOfWeek = currentDate.getDay();
+        if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+          const isHoliday = holidays.includes(dateStr);
           const dayDiv = document.createElement('div');
           dayDiv.className = 'day';
           if (isHoliday) dayDiv.classList.add('holiday');
-
           const weekday = currentDate.toLocaleDateString('de-DE', { weekday: 'short' });
           const date = currentDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
           dayDiv.innerHTML = `<div class="weekday">${weekday}</div><div class="date">${date}</div>`;
           dayDiv.dataset.date = dateStr;
-
           if (selected.includes(dateStr)) {
             dayDiv.classList.add('selected');
           }
-
           if (!isHoliday) {
             dayDiv.addEventListener('click', () => {
               dayDiv.classList.toggle('selected');
             });
           }
-
           calendar.appendChild(dayDiv);
         }
         currentDate.setDate(currentDate.getDate() + 1);
       }
     }
 
-    function loadParticipants() {
+    function loadParticipants(selectName = null) {
       onValue(ref(db, 'participants'), (snapshot) => {
         const data = snapshot.val() || {};
         participantSelect.innerHTML = '';
@@ -202,8 +199,9 @@
           option.textContent = name;
           participantSelect.appendChild(option);
         });
-        const selected = participantSelect.value;
-        if (selected) renderCalendar(selections[selected] || []);
+        const current = selectName || participantSelect.value;
+        participantSelect.value = current;
+        renderCalendar(selections[current] || []);
       });
     }
 
@@ -212,11 +210,7 @@
       if (name && !selections[name]) {
         const initialValue = ["init"];
         set(ref(db, `participants/${name}`), initialValue).then(() => {
-          setTimeout(() => {
-            loadParticipants();
-            participantSelect.value = name;
-            renderCalendar([]);
-          }, 500);
+          loadParticipants(name);
         });
       }
     });
@@ -229,8 +223,7 @@
         updates[`participants/${newName}`] = selections[oldName] || [];
         updates[`participants/${oldName}`] = null;
         update(ref(db), updates).then(() => {
-          participantSelect.value = newName;
-          loadParticipants();
+          loadParticipants(newName);
         });
       }
     });
@@ -246,14 +239,10 @@
 
     saveBtn.addEventListener('click', () => {
       const name = participantSelect.value;
-      let selectedDates = Array.from(document.querySelectorAll('.day.selected')).map(d => d.dataset.date);
-      set(ref(db, `participants/${name}`), selectedDates)
-        .then(() => {
-          console.log("💾 Auswahl gespeichert für:", name, selectedDates);
-        })
-        .catch((error) => {
-          console.error("❌ Fehler beim Speichern:", error);
-        });
+      const selectedDates = Array.from(document.querySelectorAll('.day.selected')).map(d => d.dataset.date);
+      set(ref(db, `participants/${name}`), selectedDates).then(() => {
+        loadParticipants(name);
+      });
     });
 
     participantSelect.addEventListener('change', () => {
