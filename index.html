@@ -155,6 +155,12 @@
       padding: 0 1rem;
     }
 
+    .calendar-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+}
+
     @media (max-width: 600px) {
       body {
         padding: 1rem;
@@ -172,14 +178,10 @@
       }
 
       .calendar {
-  grid-template-columns: repeat(5, 1fr);
-  gap: 0.5rem;
-  width: 90vw;
-  margin: 0 auto;
-  padding: 0;
-  transform: scale(0.9);
-  transform-origin: top center;
-}
+    transform: scale(0.9);
+    transform-origin: top center;
+    margin: 0 auto;
+  }
 
 
       .day {
@@ -206,7 +208,10 @@
     <button id="renameBtn">Teilnehmer umbenennen</button>
     <button id="deleteBtn">Teilnehmer löschen</button>
   </div>
-  <div class="calendar" id="calendar"></div>
+  <div class="calendar-wrapper">
+    <div class="calendar" id="calendar"></div>
+  </div>
+  
   <div class="save-button-container">
     <button id="saveBtn">Auswahl speichern</button>
   </div>
