@@ -8,7 +8,7 @@
     * {
       box-sizing: border-box;
     }
-  
+
     body {
       font-family: 'Segoe UI', sans-serif;
       margin: 0;
@@ -16,14 +16,14 @@
       background: linear-gradient(to bottom, #f5faff, #ffffff);
       color: #2c2c2c;
     }
-  
+
     h1 {
       text-align: center;
       font-size: 2rem;
       margin-bottom: 1.5rem;
       color: #1976d2;
     }
-  
+
     .controls,
     .actions {
       display: flex;
@@ -33,7 +33,7 @@
       margin-bottom: 1.2rem;
       padding: 0 1rem;
     }
-  
+
     select,
     input[type="text"],
     button {
@@ -46,19 +46,19 @@
       transition: all 0.2s ease;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
     }
-  
+
     button {
       background-color: #1976d2;
       color: white;
       font-weight: 500;
       border: none;
     }
-  
+
     button:hover {
       background-color: #1565c0;
       transform: scale(1.02);
     }
-  
+
     .calendar {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
@@ -67,7 +67,7 @@
       margin: 0 auto;
       padding: 0 1rem;
     }
-  
+
     .day {
       background-color: #ffffff;
       border-radius: 12px;
@@ -79,44 +79,32 @@
       transition: all 0.2s ease-in-out;
       font-weight: 500;
     }
-  
+
     .day:hover {
       background-color: #e3f2fd;
       transform: scale(1.03);
     }
-  
+
     .day.selected {
-  outline: 3px solid #1976d2;
-  outline-offset: -3px;
-  position: relative;
-  z-index: 1;
-  
-}
+      outline: 3px solid #1976d2;
+      outline-offset: -3px;
+      position: relative;
+      z-index: 1;
+    }
 
-.date-button.most-selected-own {
-  background-color: #4CAF50 !important; /* kräftiges Grün */
-  border: 3px solid #1976d2; /* blauer Rand für eigene Auswahl */
-  color: white;
-  font-weight: bold;
-}
+    .day.highlight-1 { background-color: #e8f5e9; }
+    .day.highlight-2 { background-color: #c8e6c9; }
+    .day.highlight-3 { background-color: #a5d6a7; }
+    .day.highlight-4 { background-color: #81c784; }
+    .day.highlight-5 { background-color: #66bb6a; }
 
-.day.highlight-1 {
-  background-color: #e8f5e9;
-}
-.day.highlight-2 {
-  background-color: #c8e6c9;
-}
-.day.highlight-3 {
-  background-color: #a5d6a7;
-}
-.day.highlight-4 {
-  background-color: #81c784;
-}
-.day.highlight-5 {
-  background-color: #66bb6a;
-}
+    .day.most-selected-own {
+      background-color: #4CAF50 !important;
+      border: 3px solid #1976d2;
+      color: white;
+      font-weight: bold;
+    }
 
-  
     .day.holiday {
       background-color: #f0f0f0;
       color: #999;
@@ -124,40 +112,40 @@
       cursor: not-allowed;
       pointer-events: none;
     }
-  
+
     .date {
       font-size: 1.1rem;
       font-weight: bold;
     }
-  
+
     .weekday {
       font-size: 0.9rem;
       color: #666;
     }
-  
+
     .save-button-container {
       display: flex;
       justify-content: center;
       margin-top: 2rem;
       padding: 0 1rem;
     }
-  
+
     @media (max-width: 600px) {
       body {
         padding: 1rem;
       }
-  
+
       h1 {
         font-size: 1.5rem;
       }
-  
+
       .controls,
       .actions {
         flex-direction: column;
         align-items: center;
         gap: 0.8rem;
       }
-  
+
       .calendar {
         grid-template-columns: repeat(5, 1fr);
         gap: 0.5rem;
@@ -167,12 +155,12 @@
         transform: scale(0.9);
         transform-origin: top center;
       }
-  
+
       .day {
         padding: 0.5rem;
         font-size: 0.8rem;
       }
-  
+
       select,
       button {
         width: 100%;
@@ -231,69 +219,71 @@
     }
 
     function renderCalendar(selected = []) {
-  calendar.innerHTML = '';
+      calendar.innerHTML = '';
 
-  // Anzahl der Zusagen pro Tag berechnen
-  const counts = {};
-  Object.values(selections).forEach(list => {
-    list.forEach(date => {
-      if (date !== "init") {
-        counts[date] = (counts[date] || 0) + 1;
-      }
-    });
-  });
-
-  const maxCount = Math.max(...Object.values(counts), 1); // gegen 0 schützen
-  let currentDate = new Date(startDate);
-
-  while (currentDate <= endDate) {
-    const dateStr = formatDate(currentDate);
-    const dayOfWeek = currentDate.getDay();
-    const isHoliday = holidays.includes(dateStr);
-
-    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-      const dayDiv = document.createElement('div');
-      dayDiv.className = 'day';
-      dayDiv.dataset.date = dateStr;
-
-      if (isHoliday) {
-        dayDiv.classList.add('holiday');
-      }
-
-      const count = counts[dateStr] || 0;
-      const intensity = Math.min(5, Math.ceil((count / maxCount) * 5));
-const isMostSelected = count > 0 && count === maxCount;
-const isSelectedByCurrentUser = selected.includes(dateStr);
-
-if (isMostSelected && isSelectedByCurrentUser) {
-  dayDiv.classList.add('most-selected-own');
-} else {
-  if (isMostSelected) {
-    dayDiv.classList.add(`highlight-${intensity}`);
-  }
-  if (isSelectedByCurrentUser) {
-    dayDiv.classList.add('selected');
-  }
-}
-
-
-      const weekday = currentDate.toLocaleDateString('de-DE', { weekday: 'short' });
-      const date = currentDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
-      dayDiv.innerHTML = `<div class="weekday">${weekday}</div><div class="date">${date}</div>`;
-
-      if (!isHoliday) {
-        dayDiv.addEventListener('click', () => {
-          dayDiv.classList.toggle('selected');
+      // Auswahl-Zähler
+      const counts = {};
+      Object.values(selections).forEach(list => {
+        list.forEach(date => {
+          if (date !== "init") {
+            counts[date] = (counts[date] || 0) + 1;
+          }
         });
+      });
+
+      const maxCount = Math.max(...Object.values(counts), 1);
+      const mostSelectedDates = Object.keys(counts).filter(d => counts[d] === maxCount);
+
+      console.log("counts:", counts);
+      console.log("maxCount:", maxCount);
+      console.log("mostSelectedDates:", mostSelectedDates);
+
+      let currentDate = new Date(startDate);
+
+      while (currentDate <= endDate) {
+        const dateStr = formatDate(currentDate);
+        const dayOfWeek = currentDate.getDay();
+        const isHoliday = holidays.includes(dateStr);
+
+        if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+          const dayDiv = document.createElement('div');
+          dayDiv.className = 'day';
+          dayDiv.dataset.date = dateStr;
+
+          if (isHoliday) {
+            dayDiv.classList.add('holiday');
+          }
+
+          const count = counts[dateStr] || 0;
+
+          if (count > 0 && !selected.includes(dateStr)) {
+            const intensity = Math.min(5, Math.ceil((count / maxCount) * 5));
+            dayDiv.classList.add(`highlight-${intensity}`);
+          }
+
+          if (selected.includes(dateStr)) {
+            dayDiv.classList.add('selected');
+            if (mostSelectedDates.includes(dateStr)) {
+              dayDiv.classList.add('most-selected-own');
+            }
+          }
+
+          const weekday = currentDate.toLocaleDateString('de-DE', { weekday: 'short' });
+          const date = currentDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+          dayDiv.innerHTML = `<div class="weekday">${weekday}</div><div class="date">${date}</div>`;
+
+          if (!isHoliday) {
+            dayDiv.addEventListener('click', () => {
+              dayDiv.classList.toggle('selected');
+            });
+          }
+
+          calendar.appendChild(dayDiv);
+        }
+
+        currentDate.setDate(currentDate.getDate() + 1);
       }
-
-      calendar.appendChild(dayDiv);
     }
-
-    currentDate.setDate(currentDate.getDate() + 1);
-  }
-}
-
 
     function loadParticipants(selectName = null) {
       onValue(ref(db, 'participants'), (snapshot) => {
@@ -346,16 +336,15 @@ if (isMostSelected && isSelectedByCurrentUser) {
     });
 
     saveBtn.addEventListener('click', () => {
-  const name = participantSelect.value;
-  let selectedDates = Array.from(document.querySelectorAll('.day.selected')).map(d => d.dataset.date);
-  if (selectedDates.length === 0) {
-    selectedDates = ["init"];
-  }
-  set(ref(db, `participants/${name}`), selectedDates).then(() => {
-    loadParticipants(name);
-  });
-});
-
+      const name = participantSelect.value;
+      let selectedDates = Array.from(document.querySelectorAll('.day.selected')).map(d => d.dataset.date);
+      if (selectedDates.length === 0) {
+        selectedDates = ["init"];
+      }
+      set(ref(db, `participants/${name}`), selectedDates).then(() => {
+        loadParticipants(name);
+      });
+    });
 
     participantSelect.addEventListener('change', () => {
       const name = participantSelect.value;
