@@ -330,12 +330,16 @@
     });
 
     saveBtn.addEventListener('click', () => {
-      const name = participantSelect.value;
-      const selectedDates = Array.from(document.querySelectorAll('.day.selected')).map(d => d.dataset.date);
-      set(ref(db, `participants/${name}`), selectedDates).then(() => {
-        loadParticipants(name);
-      });
-    });
+  const name = participantSelect.value;
+  let selectedDates = Array.from(document.querySelectorAll('.day.selected')).map(d => d.dataset.date);
+  if (selectedDates.length === 0) {
+    selectedDates = ["init"];
+  }
+  set(ref(db, `participants/${name}`), selectedDates).then(() => {
+    loadParticipants(name);
+  });
+});
+
 
     participantSelect.addEventListener('change', () => {
       const name = participantSelect.value;
