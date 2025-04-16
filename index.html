@@ -357,29 +357,19 @@
       }
     });
 
-    deleteBtn.addEventListener("click", async () => {
-  const selectedName = nameSelect.value;
-  if (!selectedName || !selections[selectedName]) return;
+    deleteBtn.addEventListener('click', () => {
+  const name = participantSelect.value;
+  if (name && confirm(`${name} wirklich löschen?`)) {
+    remove(ref(db, `participants/${name}`)).then(() => {
+      // 🧹 Lokale Daten löschen
+      delete selections[name];
 
-  if (confirm(`Teilnehmer "${selectedName}" wirklich löschen?`)) {
-    await remove(ref(database, `selections/${selectedName}`));
-    
-    // 🆕 Danach aktuelle Daten neu laden
-    const snapshot = await get(dbRef);
-    if (snapshot.exists()) {
-      selections = snapshot.val();
-    } else {
-      selections = {};
-    }
-
-    updateNameOptions();
-    nameInput.value = '';
-    nameSelect.value = '';
-
-    calendar.innerHTML = '';
-    renderCalendar([]);
+      // 🔄 Teilnehmerliste neu laden und Kalender aktualisieren
+      loadParticipants();
+    });
   }
 });
+
 
 
     saveBtn.addEventListener('click', () => {
