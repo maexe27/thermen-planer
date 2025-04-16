@@ -93,6 +93,12 @@
   
 }
 
+.date-button.most-selected-own {
+  background-color: #4CAF50 !important; /* kräftiges Grün */
+  border: 3px solid #1976d2; /* blauer Rand für eigene Auswahl */
+  color: white;
+  font-weight: bold;
+}
 
 .day.highlight-1 {
   background-color: #e8f5e9;
@@ -255,14 +261,21 @@
       }
 
       const count = counts[dateStr] || 0;
-      if (count > 0 && !selected.includes(dateStr)) {
-        const intensity = Math.min(5, Math.ceil((count / maxCount) * 5));
-        dayDiv.classList.add(`highlight-${intensity}`);
-      }
+      const intensity = Math.min(5, Math.ceil((count / maxCount) * 5));
+const isMostSelected = count > 0 && count === maxCount;
+const isSelectedByCurrentUser = selected.includes(dateStr);
 
-      if (selected.includes(dateStr)) {
-        dayDiv.classList.add('selected');
-      }
+if (isMostSelected && isSelectedByCurrentUser) {
+  dayDiv.classList.add('most-selected-own');
+} else {
+  if (isMostSelected) {
+    dayDiv.classList.add(`highlight-${intensity}`);
+  }
+  if (isSelectedByCurrentUser) {
+    dayDiv.classList.add('selected');
+  }
+}
+
 
       const weekday = currentDate.toLocaleDateString('de-DE', { weekday: 'short' });
       const date = currentDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
