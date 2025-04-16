@@ -154,8 +154,6 @@
       }
     }
   </style>
-  
-  
 </head>
 <body>
   <h1>Thermen Planer</h1>
@@ -209,6 +207,16 @@
     function renderCalendar(selected = []) {
       calendar.innerHTML = '';
       let currentDate = new Date(startDate);
+
+      // Alle Stimmen pro Tag zählen
+      const voteCounts = {};
+      Object.values(selections).forEach(arr => {
+        arr.forEach(date => {
+          if (date !== "init") voteCounts[date] = (voteCounts[date] || 0) + 1;
+        });
+      });
+      const maxVotes = Math.max(...Object.values(voteCounts), 0);
+
       while (currentDate <= endDate) {
         const dateStr = formatDate(currentDate);
         const dayOfWeek = currentDate.getDay();
@@ -217,18 +225,28 @@
           const dayDiv = document.createElement('div');
           dayDiv.className = 'day';
           if (isHoliday) dayDiv.classList.add('holiday');
+
           const weekday = currentDate.toLocaleDateString('de-DE', { weekday: 'short' });
           const date = currentDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
           dayDiv.innerHTML = `<div class="weekday">${weekday}</div><div class="date">${date}</div>`;
           dayDiv.dataset.date = dateStr;
+
           if (selected.includes(dateStr)) {
             dayDiv.classList.add('selected');
           }
+
+          // Heatmap einfärben
+          if (!isHoliday && voteCounts[dateStr]) {
+            const intensity = Math.round(255 - (voteCounts[dateStr] / maxVotes) * 120);
+            dayDiv.style.backgroundColor = `rgb(${intensity}, ${intensity + 10}, 255)`;
+          }
+
           if (!isHoliday) {
             dayDiv.addEventListener('click', () => {
               dayDiv.classList.toggle('selected');
             });
           }
+
           calendar.appendChild(dayDiv);
         }
         currentDate.setDate(currentDate.getDate() + 1);
