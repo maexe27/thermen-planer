@@ -8,105 +8,148 @@
     * {
       box-sizing: border-box;
     }
-
+  
     body {
       font-family: 'Segoe UI', sans-serif;
       margin: 0;
-      padding: 2rem;
+      padding: 1rem;
       background: linear-gradient(to right, #e0f7fa, #fff);
       color: #333;
+      max-width: 100%;
     }
-
+  
     h1 {
       text-align: center;
       font-size: 2rem;
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
       color: #00796b;
     }
-
-    .controls, .actions {
+  
+    .controls,
+    .actions {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
+      gap: 0.8rem;
+      margin-bottom: 1.2rem;
     }
-
-    select, button {
-      padding: 0.6rem 1rem;
+  
+    select,
+    button {
+      padding: 0.5rem 1rem;
       border-radius: 8px;
       border: none;
       font-size: 1rem;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      flex: 1 1 auto;
+      max-width: 300px;
     }
-
+  
     select {
       background-color: #fff;
       color: #333;
     }
-
+  
     button {
       background-color: #00796b;
       color: white;
       transition: background-color 0.3s ease;
     }
-
+  
     button:hover {
       background-color: #004d40;
     }
-
+  
     .calendar {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
       gap: 1rem;
       max-width: 700px;
       margin: 0 auto;
+      padding: 0 1rem;
     }
-
+  
     .day {
       background-color: white;
       border-radius: 12px;
-      padding: 1rem;
+      padding: 0.8rem;
       text-align: center;
       cursor: pointer;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
       transition: all 0.2s ease-in-out;
     }
-
+  
     .day:hover {
       transform: scale(1.03);
       background-color: #f1fdfd;
     }
-
+  
     .day.selected {
       background-color: #b2dfdb;
       border: 2px solid #00796b;
       color: #004d40;
     }
-
+  
     .day.holiday {
       background-color: #f0f0f0;
       color: #aaa;
       cursor: not-allowed;
       pointer-events: none;
     }
-
+  
     .date {
       font-size: 1.1rem;
       font-weight: bold;
     }
-
+  
     .weekday {
       font-size: 0.9rem;
       color: #666;
     }
-
+  
     .save-button-container {
       display: flex;
       justify-content: center;
       margin-top: 2rem;
     }
+  
+    @media (max-width: 600px) {
+      body {
+        padding: 0.5rem;
+      }
+  
+      h1 {
+        font-size: 1.5rem;
+      }
+  
+      .controls,
+      .actions {
+        flex-direction: column;
+        align-items: center;
+      }
+  
+      .calendar {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 0.6rem;
+      }
+  
+      select,
+      button {
+        width: 100%;
+        max-width: none;
+      }
+  
+      .day {
+        padding: 0.6rem;
+      }
+  
+      .save-button-container {
+        margin-top: 1.5rem;
+        padding: 0 1rem;
+      }
+    }
   </style>
+  
 </head>
 <body>
   <h1>Thermen Planer</h1>
