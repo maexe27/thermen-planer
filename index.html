@@ -316,6 +316,46 @@
       }
     }
 
+    function renderStats() {
+  const statsDiv = document.getElementById('stats');
+  const voteCounts = {};
+  const participantCounts = {};
+  let maxVotes = 0;
+  let mostSelectedParticipant = '';
+  let mostSelectedDates = [];
+
+  for (const [name, dates] of Object.entries(selections)) {
+    const filteredDates = dates.filter(d => d !== 'init');
+    participantCounts[name] = filteredDates.length;
+
+    if (filteredDates.length > maxVotes) {
+      maxVotes = filteredDates.length;
+      mostSelectedParticipant = name;
+    }
+
+    filteredDates.forEach(date => {
+      voteCounts[date] = (voteCounts[date] || 0) + 1;
+    });
+  }
+
+  const maxVoteCount = Math.max(...Object.values(voteCounts), 0);
+  mostSelectedDates = Object.keys(voteCounts).filter(date => voteCounts[date] === maxVoteCount);
+
+  let html = '<strong>📊 Mini-Statistik:</strong><br>';
+
+  if (mostSelectedDates.length > 0) {
+    html += `🗓️ Beliebtester Tag: <strong>${mostSelectedDates.join(', ')}</strong> mit <strong>${maxVoteCount}</strong> Stimme(n)<br>`;
+  } else {
+    html += '🗓️ Noch keine Auswahl getroffen.<br>';
+  }
+
+  if (mostSelectedParticipant) {
+    html += `🏅 Aktivster Teilnehmer: <strong>${mostSelectedParticipant}</strong> mit <strong>${maxVotes}</strong> gewählten Tagen<br>`;
+  }
+
+  statsDiv.innerHTML = html;
+}
+
     function loadParticipants(selectName = null) {
       onValue(ref(db, 'participants'), (snapshot) => {
         const data = snapshot.val() || {};
@@ -380,6 +420,8 @@
       }
       set(ref(db, `participants/${name}`), selectedDates).then(() => {
         loadParticipants(name);
+renderStats();
+
       });
     });
 
@@ -388,7 +430,11 @@
       renderCalendar(selections[name] || []);
     });
 
-    loadParticipants();
+    loadParticipants(); 
+renderStats();
+
   </script>
+  <div id="stats" style="text-align: center; margin-top: 2rem; font-size: 1rem; color: #444;"></div>
+
 </body>
 </html>
