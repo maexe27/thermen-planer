@@ -62,7 +62,7 @@
     .calendar {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      gap: 1rem;
+      gap: clamp(0.2rem, 2vw, 1rem);
       max-width: 800px;
       margin: 0 auto;
       padding: 0 1rem;
@@ -186,7 +186,16 @@
 
       .day {
         padding: 0.5rem;
-        font-size: 0.8rem;
+        font-size: clamp(0.1rem, 2,5vw, 1rem);
+      }
+
+      .weekday {
+      font-size: clamp(0.5rem, 2,5vw, 0.9rem);
+      color: #666;
+    }
+
+      .date {
+        font-size: clamp(0.1rem, 2,5vw, 1rem);
       }
 
       select,
