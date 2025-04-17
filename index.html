@@ -202,7 +202,9 @@
   <h1>Thermen Planer</h1>
   <div class="controls">
     <label for="participantSelect">Teilnehmer:</label>
-    <select id="participantSelect"></select>
+    <select id="participantSelect">
+      <option value="" disabled selected hidden>Teilnehmer auswählen</option>
+    </select>
   </div>
   <div class="actions">
     <button id="addBtn">Teilnehmer hinzufügen</button>
@@ -343,29 +345,45 @@
     }
   
     function loadParticipants(selectName = null) {
-      onValue(ref(db, 'participants'), (snapshot) => {
-        const data = snapshot.val() || {};
-        participantSelect.innerHTML = '';
-        Object.entries(data).forEach(([name, value]) => {
-          const dates = value.dates || [];
-          const filtered = dates.filter(d => d !== "init");
-          selections[name] = filtered;
-          timestamps[name] = {
-            createdAt: value.createdAt || null,
-            updatedAt: value.updatedAt || null
-          };
-  
-          const option = document.createElement('option');
-          option.value = name;
-          option.textContent = name;
-          participantSelect.appendChild(option);
-        });
-        const current = selectName || participantSelect.value;
-        participantSelect.value = current;
-        renderCalendar(selections[current] || []);
-        renderStats();
-      });
+  onValue(ref(db, 'participants'), (snapshot) => {
+    const data = snapshot.val() || {};
+    participantSelect.innerHTML = '';
+
+    // Platzhalter-Option hinzufügen
+    const placeholderOption = document.createElement('option');
+    placeholderOption.value = '';
+    placeholderOption.textContent = 'Teilnehmer auswählen';
+    placeholderOption.disabled = true;
+    placeholderOption.selected = true;
+    participantSelect.appendChild(placeholderOption);
+
+    Object.entries(data).forEach(([name, value]) => {
+      const dates = value.dates || [];
+      const filtered = dates.filter(d => d !== "init");
+      selections[name] = filtered;
+      timestamps[name] = {
+        createdAt: value.createdAt || null,
+        updatedAt: value.updatedAt || null
+      };
+
+      const option = document.createElement('option');
+      option.value = name;
+      option.textContent = name;
+      participantSelect.appendChild(option);
+    });
+
+    // Nur selektieren, wenn ein gültiger Name übergeben wurde
+    if (selectName && selections[selectName]) {
+      participantSelect.value = selectName;
+      renderCalendar(selections[selectName]);
+    } else {
+      renderCalendar([]); // leeren Kalender anzeigen
     }
+
+    renderStats();
+  });
+}
+
   
     addBtn.addEventListener('click', () => {
       const name = prompt('Neuer Teilnehmername:');
