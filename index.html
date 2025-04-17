@@ -15,6 +15,7 @@
       padding: 1rem;
       background: linear-gradient(to bottom, #f5faff, #ffffff);
       color: #2c2c2c;
+      text-align: center;
     }
 
     h1 {
@@ -45,6 +46,7 @@
       color: #2c2c2c;
       transition: all 0.2s ease;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      text-align: center;
     }
 
     button {
@@ -167,36 +169,34 @@
   width: 100%;
 }
 
-    @media (max-width: 100%) {
-      body {
-        padding: 1rem;
-      }
+@media (max-width: 600px) {
+  body {
+    padding: 1rem;
+  }
 
-      h1 {
-        font-size: 1.5rem;
-      }
+  h1 {
+    font-size: 1.5rem;
+  }
 
-      .controls,
-      .actions {
-        flex-direction: column;
-        align-items: center;
-        gap: 0.8rem;
-      }
+  .controls,
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.8rem;
+  }
 
-  
+  select,
+  input[type="text"],
+  button {
+    width: 100%;
+    font-size: 1rem;
+  }
 
+  .day {
+    padding: 0.5rem;
+  }
+}
 
-      .day {
-        padding: 0.5rem;
-        
-      }
-
-      select,
-      button {
-        width: 100%;
-        font-size: 1rem;
-      }
-    }
   </style>
 </head>
 <body>
