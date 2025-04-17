@@ -60,18 +60,23 @@
     }
 
     .calendar {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 1rem;
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 0 1rem;
-    }
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: clamp(0.4rem, 1vw, 1.2rem);
+  width: 100%;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 clamp(0.5rem, 1vw, 1rem);
+  box-sizing: border-box;
+}
+
 
     .day {
       background-color: #ffffff;
       border-radius: 12px;
-      padding: 0.8rem;
+      padding-top: 0.4rem;
+      padding-bottom: 0.4rem;
       text-align: center;
       cursor: pointer;
       border: 2px solid #e0e0e0;
@@ -139,12 +144,12 @@
     }
 
     .date {
-      font-size: 1.1rem;
+      font-size: clamp(0.5rem, 2.5vw, 1.1rem);
       font-weight: bold;
     }
 
     .weekday {
-      font-size: 0.9rem;
+      font-size: clamp(0.5rem, 2.5vw, 0.9rem);
       color: #666;
     }
 
@@ -159,9 +164,10 @@
   display: flex;
   justify-content: center;
   padding: 1rem;
+  width: 100%;
 }
 
-    @media (max-width: 600px) {
+    @media (max-width: 100%) {
       body {
         padding: 1rem;
       }
@@ -177,16 +183,12 @@
         gap: 0.8rem;
       }
 
-      .calendar {
-    transform: scale(0.9);
-    transform-origin: top center;
-    margin: 0 auto;
-  }
+  
 
 
       .day {
         padding: 0.5rem;
-        font-size: 0.8rem;
+        
       }
 
       select,
@@ -201,7 +203,9 @@
   <h1>Thermen Planer</h1>
   <div class="controls">
     <label for="participantSelect">Teilnehmer:</label>
-    <select id="participantSelect"></select>
+    <select id="participantSelect">
+      <option value="" disabled selected hidden>Teilnehmer auswählen</option>
+    </select>
   </div>
   <div class="actions">
     <button id="addBtn">Teilnehmer hinzufügen</button>
@@ -342,29 +346,44 @@
     }
   
     function loadParticipants(selectName = null) {
-      onValue(ref(db, 'participants'), (snapshot) => {
-        const data = snapshot.val() || {};
-        participantSelect.innerHTML = '';
-        Object.entries(data).forEach(([name, value]) => {
-          const dates = value.dates || [];
-          const filtered = dates.filter(d => d !== "init");
-          selections[name] = filtered;
-          timestamps[name] = {
-            createdAt: value.createdAt || null,
-            updatedAt: value.updatedAt || null
-          };
-  
-          const option = document.createElement('option');
-          option.value = name;
-          option.textContent = name;
-          participantSelect.appendChild(option);
-        });
-        const current = selectName || participantSelect.value;
-        participantSelect.value = current;
-        renderCalendar(selections[current] || []);
-        renderStats();
-      });
+  onValue(ref(db, 'participants'), (snapshot) => {
+    const data = snapshot.val() || {};
+    participantSelect.innerHTML = '';
+
+    // Platzhalter-Option hinzufügen
+    const placeholderOption = document.createElement('option');
+    placeholderOption.value = '';
+    placeholderOption.textContent = 'Teilnehmer auswählen';
+    placeholderOption.disabled = true;
+    placeholderOption.selected = true;
+    participantSelect.appendChild(placeholderOption);
+
+    Object.entries(data).forEach(([name, value]) => {
+      const dates = value.dates || [];
+      const filtered = dates.filter(d => d !== "init");
+      selections[name] = filtered;
+      timestamps[name] = {
+        createdAt: value.createdAt || null,
+        updatedAt: value.updatedAt || null
+      };
+
+      const option = document.createElement('option');
+      option.value = name;
+      option.textContent = name;
+      participantSelect.appendChild(option);
+    });
+
+    // Nur selektieren, wenn ein gültiger Name übergeben wurde
+    if (selectName && selections[selectName]) {
+      participantSelect.value = selectName;
+      renderCalendar(selections[selectName]);
+    } else {
+      renderCalendar([]); // leeren Kalender anzeigen
     }
+
+    renderStats();
+  });
+}
   
     addBtn.addEventListener('click', () => {
       const name = prompt('Neuer Teilnehmername:');
