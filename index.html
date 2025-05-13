@@ -207,9 +207,9 @@
     </select>
   </div>
   <div class="actions">
-    <button id="addBtn">Teilnehmer hinzufügen</button>
-    <button id="renameBtn">Teilnehmer umbenennen</button>
-    <button id="deleteBtn">Teilnehmer löschen</button>
+    <button id="addBtn">Teilnehmer hinzufügen</button>      <!-- große Felder mit kleinen Buttons austauschen-->
+    <button id="renameBtn">Teilnehmer umbenennen</button>   <!-- große Felder mit kleinen Buttons austauschen-->
+    <button id="deleteBtn">Teilnehmer löschen</button>      <!-- große Felder mit kleinen Buttons austauschen-->
   </div>
   <div class="calendar-wrapper">
     <div class="calendar" id="calendar"></div>
@@ -245,9 +245,9 @@
   
     const selections = {};
     const timestamps = {};
-    const startDate = new Date('2025-04-28');
-    const endDate = new Date('2025-06-06');
-    const holidays = ['2025-05-01', '2025-05-02', '2025-05-29', '2025-05-30'];
+    const startDate = new Date('2025-05-05');
+    const endDate = new Date('2025-06-27');
+    const holidays = ['2025-05-01', '2025-05-02', '2025-05-29', '2025-05-30', '2025-06-09', '2025-06-19', '2025-06-20'];
   
     function formatDate(date) {
       return date.toISOString().split('T')[0];
